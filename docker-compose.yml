@@ -22,7 +22,7 @@ services:
         container_name: laravel_db
         restart: unless-stopped
         environment:
-            MYSQL_DATABASE: web_pricer
+            MYSQL_DATABASE: laravel
             MYSQL_USER: laravel_user
             MYSQL_PASSWORD: secret
             MYSQL_ROOT_PASSWORD: secret
@@ -32,12 +32,17 @@ services:
             - laravel_network
 
     node:
-        image: node:23 # если Node.js 23 недоступен, используйте node:20 или node:21
+        image: node:20
         container_name: laravel_node
         restart: unless-stopped
         working_dir: /var/www/html
+        environment:
+            - HOST=0.0.0.0
+            - PORT=5173
         volumes:
             - .:/var/www/html
+        ports:
+            - "5173:5173"
         command: sh -c "npm install && npm run dev"
         networks:
             - laravel_network

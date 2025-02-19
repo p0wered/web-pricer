@@ -1,5 +1,5 @@
-# Используем официальный образ PHP 8.4.4 с Apache
-FROM php:8.4.4-apache
+# Используем официальный образ PHP 8.2 с Apache
+FROM php:8.2-apache
 
 # Устанавливаем необходимые зависимости
 RUN apt-get update && apt-get install -y \
@@ -15,8 +15,8 @@ RUN apt-get update && apt-get install -y \
 # Устанавливаем Composer 2.8.4
 COPY --from=composer:2.8.4 /usr/bin/composer /usr/bin/composer
 
-# Устанавливаем Node.js 23 (если доступен)
-RUN curl -fsSL https://deb.nodesource.com/setup_23.x | bash - \
+# Устанавливаем Node.js 20
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
     && apt-get install -y nodejs
 
 # Копируем исходный код проекта
