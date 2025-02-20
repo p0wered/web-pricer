@@ -22,7 +22,7 @@ services:
         container_name: laravel_db
         restart: unless-stopped
         environment:
-            MYSQL_DATABASE: laravel
+            MYSQL_DATABASE: web_pricer
             MYSQL_USER: laravel_user
             MYSQL_PASSWORD: secret
             MYSQL_ROOT_PASSWORD: secret

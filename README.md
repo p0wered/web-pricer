@@ -1,20 +1,49 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+<p style="width: 100%; font-size: 48px; text-align: center; color: #ffffff">WebPricer</p>
+<p style="width: 100%; font-size: 18px; text-align: center; line-height: 0">Веб-интерфейс для аналитической работы с данными</p>
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+## <p>Запуск сервис через <span style="color: #008CFFFF">Docker</span></p>
 
-## Настройка портов
+### 1. Настройка .env файла (опционально)
 
-По умолчанию приложение использует порт `8000`. Если этот порт занят, вы можете изменить его, отредактировав файл `.env`:
-
+По умолчанию сервис использует порт 8000. Если этот порт занят, вы можете изменить его, отредактировав следующую строчку:
 ```env
-APP_PORT=2429
+APP_PORT=
 ```
 
-## License
+Для смены часового пояса отредактируйте следующую строчку (список всех часовых поясов [здесь](https://www.php.net/manual/en/timezones.php)):
+```env
+APP_TIMEZONE=
+```
+
+Для смены URL используйте следующую строчку:
+```env
+APP_URL=
+```
+Если вы меняете на кастомный URL, не забудьте добавить его в файл hosts системы
+
+### 2. Развёртывание сервиса и создание контейнеров
+
+Для запуска процесса развёртывания проекта перейдите в корень проекта через терминал и выполните следующую команду:
+```console
+docker-compose up --build
+```
+
+### 3. Настройка серверной части Laravel
+
+После успешного завершения развёртывания откройте контейнер **laravel_app** (через терминал или Docker Desktop) и выполните следующие команды:
+
+```console
+composer install
+```
+```console
+php artisan key:generate
+```
+```console
+php artisan migrate
+```
+
+### <p> После выполнение данных шагов сервис должен быть готов к работе</p>
+
+## Лицензия
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
