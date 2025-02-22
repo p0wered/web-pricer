@@ -1,7 +1,7 @@
-<p style="width: 100%; font-size: 48px; text-align: center; color: #ffffff">WebPricer</p>
-<p style="width: 100%; font-size: 18px; text-align: center; line-height: 0">Веб-интерфейс для аналитической работы с данными</p>
+# <p style="width: 100%; font-size: 46px; text-align: center; color: #ffffff; line-height: 0">WebPricer</p>
+### <p style="width: 100%; font-size: 18px; text-align: center;">Веб-интерфейс для аналитической работы с данными</p>
 
-## <p>Запуск сервис через <span style="color: #008CFFFF">Docker</span></p>
+## Запуск сервиса через Docker
 
 ### 1. Настройка .env файла (опционально)
 
@@ -41,8 +41,20 @@ php artisan key:generate
 ```console
 php artisan migrate
 ```
+```console
+php artisan db:seed
+```
 
-### <p> После выполнение данных шагов сервис должен быть готов к работе</p>
+После выполнение данных шагов сервис должен быть готов к работе
+
+### 4. Смена пароля для авторизации
+
+По умолчанию пароль для входа `12341234`
+
+Для смены пароля выполните данную команду:
+```
+php artisan password:change 
+```
 
 ## Лицензия
 

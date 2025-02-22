@@ -31,6 +31,7 @@ export default function AuthenticatedLayout({ header, children }) {
                                     href={route('logout')}
                                     method="post"
                                     as="button"
+                                    className="text-sm text-gray-700 underline"
                                 >
                                     Log Out
                                 </Link>
