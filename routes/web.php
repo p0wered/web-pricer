@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
+use App\Http\Controllers\SearchController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -24,5 +25,8 @@ Route::get('/dashboard', function () {
 
 Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])
     ->name('logout');
+
+Route::get('/search', [SearchController::class, 'index'])->name('search.index');
+Route::post('/search', [SearchController::class, 'search'])->name('search.search');
 
 require __DIR__.'/auth.php';
