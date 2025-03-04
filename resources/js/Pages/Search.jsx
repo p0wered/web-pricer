@@ -1,6 +1,8 @@
 import React from 'react';
-import { Head, useForm } from '@inertiajs/react';
+import {Head, useForm} from '@inertiajs/react';
 import Layout from '@/Layouts/AuthenticatedLayout';
+import Pagination from "@/Components/Pagination.jsx";
+
 
 export default function Index({ auth, mainProducts, specialProducts, search }) {
     const { data, setData, post, processing } = useForm({
@@ -11,40 +13,6 @@ export default function Index({ auth, mainProducts, specialProducts, search }) {
         e.preventDefault();
         post(route('search.search'));
     };
-
-    const ProductTable = ({ products, title }) => (
-        <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-4">
-            <h2 className="text-lg font-semibold mb-4">{title} ({products.length})</h2>
-            {products.length > 0 ? (
-                <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
-                        <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Название</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Код</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Количество</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Цена</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Поставщик</th>
-                        </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                        {products.map((product) => (
-                            <tr key={product.id}>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{product.name}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{product.code}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{product.quantity}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{product.price}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{product.sheet_name}</td>
-                            </tr>
-                        ))}
-                        </tbody>
-                    </table>
-                </div>
-            ) : (
-                <p className="text-gray-500">Нет данных для отображения</p>
-            )}
-        </div>
-    );
 
     return (
         <Layout auth={auth}>
@@ -76,8 +44,86 @@ export default function Index({ auth, mainProducts, specialProducts, search }) {
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <ProductTable products={specialProducts} title="Стоп-лист" />
-                        <ProductTable products={mainProducts} title="Детали" />
+                        <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-4">
+                            <h2 className="text-lg font-semibold mb-4">
+                                Стоп-лист ({specialProducts.total || 0})
+                            </h2>
+                            {specialProducts.data && specialProducts.data.length > 0 ? (
+                                <>
+                                    <div className="overflow-x-auto">
+                                        <table className="min-w-full divide-y divide-gray-200">
+                                            <thead className="bg-gray-50">
+                                            <tr>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Название</th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Год</th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Количество</th>
+                                            </tr>
+                                            </thead>
+                                            <tbody className="bg-white divide-y divide-gray-200">
+                                            {specialProducts.data.map((product) => (
+                                                <tr key={product.id}>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{product.name}</td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{product.code}</td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{product.quantity}</td>
+                                                </tr>
+                                            ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <Pagination
+                                        links={specialProducts.links}
+                                        search={search}
+                                        currentPage={specialProducts.current_page}
+                                        lastPage={specialProducts.last_page}
+                                        pageParam="special_page"
+                                    />
+                                </>
+                            ) : (
+                                <p className="text-gray-500">Нет данных для отображения</p>
+                            )}
+                        </div>
+                        <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-4">
+                            <h2 className="text-lg font-semibold mb-4">
+                                Детали ({mainProducts.total || 0})
+                            </h2>
+                            {mainProducts.data && mainProducts.data.length > 0 ? (
+                                <>
+                                    <div className="overflow-x-auto">
+                                        <table className="min-w-full divide-y divide-gray-200">
+                                            <thead className="bg-gray-50">
+                                            <tr>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Название</th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Год</th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Количество</th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Цена</th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Поставщик</th>
+                                            </tr>
+                                            </thead>
+                                            <tbody className="bg-white divide-y divide-gray-200">
+                                            {mainProducts.data.map((product) => (
+                                                <tr key={product.id}>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{product.name}</td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{product.code}</td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{product.quantity}</td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{product.price}</td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{product.sheet_name}</td>
+                                                </tr>
+                                            ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <Pagination
+                                        links={mainProducts.links}
+                                        search={search}
+                                        currentPage={mainProducts.current_page}
+                                        lastPage={mainProducts.last_page}
+                                        pageParam="main_page"
+                                    />
+                                </>
+                            ) : (
+                                <p className="text-gray-500">Нет данных для отображения</p>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
