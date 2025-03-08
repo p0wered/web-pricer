@@ -46,21 +46,28 @@ class SearchController extends Controller
             return redirect()->route('search.index');
         }
 
-        $searchTerms = preg_split('/\s+/', trim($search));
+        $normalizedSearch = preg_replace('/\s+/', ' ', trim($search));
+        $unifiedSearch = $this->unifyString($normalizedSearch);
 
         $mainProducts = MainProduct::query();
         $specialProducts = SpecialProduct::query();
 
-        $applySearchConditions = function($query) use ($searchTerms, $search) {
-            $query->where(function($q) use ($searchTerms, $search) {
-                foreach ($searchTerms as $term) {
-                    if (strlen($term) >= 2) {
-                        $q->orWhere('name', 'LIKE', "%{$term}%");
-                    }
-                }
+        $applySearchConditions = function($query) use ($normalizedSearch, $unifiedSearch) {
+            $query->where(function($q) use ($normalizedSearch, $unifiedSearch) {
+                $q->where('name', '=', $normalizedSearch)
+                    ->orWhereRaw("LOWER(REPLACE(REPLACE(REPLACE(REPLACE(name, '-', ''), ' ', ''), ',', ''), '.', '')) = ?", [strtolower($unifiedSearch)])
+                    ->orWhere('name', 'LIKE', "%{$normalizedSearch}%")
+                    ->orWhereRaw("LOWER(REPLACE(REPLACE(REPLACE(REPLACE(name, '-', ''), ' ', ''), ',', ''), '.', '')) LIKE ?", ["%".strtolower($unifiedSearch)."%"]);
 
-                if (strlen($search) >= 2) {
-                    $q->orWhere('name', 'LIKE', "%{$search}%");
+                $tokens = preg_split('/[\s\-,\.]+/', $normalizedSearch);
+                if (count($tokens) > 1) {
+                    $q->orWhere(function($subq) use ($tokens) {
+                        foreach ($tokens as $token) {
+                            if (strlen($token) >= 1) {
+                                $subq->where('name', 'LIKE', "%{$token}%");
+                            }
+                        }
+                    });
                 }
             });
 
@@ -70,21 +77,31 @@ class SearchController extends Controller
         $mainProducts = $applySearchConditions($mainProducts);
         $specialProducts = $applySearchConditions($specialProducts);
 
-        $orderByRelevance = function($query) use ($searchTerms, $search) {
+        $orderByRelevance = function($query) use ($normalizedSearch, $unifiedSearch) {
             $relevanceScore = '(';
 
-            $relevanceScore .= "(CASE WHEN name = '{$search}' THEN 100 ELSE 0 END) + ";
+            $relevanceScore .= "CASE WHEN name = '{$normalizedSearch}' THEN 1000 ELSE 0 END + ";
+            $relevanceScore .= "CASE WHEN LOWER(REPLACE(REPLACE(REPLACE(REPLACE(name, '-', ''), ' ', ''), ',', ''), '.', '')) = '".strtolower($unifiedSearch)."' THEN 900 ELSE 0 END + ";
 
-            $relevanceScore .= "(CASE WHEN name LIKE '{$search}%' THEN 50 ELSE 0 END) + ";
+            $relevanceScore .= "CASE WHEN name LIKE '{$normalizedSearch}%' THEN 800 ELSE 0 END + ";
+            $relevanceScore .= "CASE WHEN LOWER(REPLACE(REPLACE(REPLACE(REPLACE(name, '-', ''), ' ', ''), ',', ''), '.', '')) LIKE '".strtolower($unifiedSearch)."%' THEN 700 ELSE 0 END + ";
 
-            foreach ($searchTerms as $term) {
-                if (strlen($term) >= 2) {
-                    $relevanceScore .= "(CASE WHEN name LIKE '%{$term}%' THEN 10 ELSE 0 END) + ";
+            $relevanceScore .= "CASE WHEN name LIKE '%{$normalizedSearch}%' THEN 600 ELSE 0 END + ";
+            $relevanceScore .= "CASE WHEN LOWER(REPLACE(REPLACE(REPLACE(REPLACE(name, '-', ''), ' ', ''), ',', ''), '.', '')) LIKE '%".strtolower($unifiedSearch)."%' THEN 500 ELSE 0 END";
+
+            $tokens = preg_split('/[\s\-,\.]+/', $normalizedSearch);
+            foreach ($tokens as $index => $token) {
+                if (strlen($token) >= 2) {
+                    $score = 400 - ($index * 10);
+                    $relevanceScore .= " + CASE WHEN name LIKE '%{$token}%' THEN {$score} ELSE 0 END";
                 }
             }
 
-            $relevanceScore = rtrim($relevanceScore, "+ ") . ")";
-            $query->orderByRaw("{$relevanceScore} DESC");
+            $relevanceScore .= ")";
+
+            $query->orderByRaw("{$relevanceScore} DESC")
+                ->orderBy('name', 'ASC');
+
             return $query;
         };
 
@@ -108,5 +125,10 @@ class SearchController extends Controller
             'specialProducts' => $specialProductsResults,
             'search' => $search
         ]);
+    }
+
+    private function unifyString($string)
+    {
+        return preg_replace('/[\s\-\.,]+/', '', $string);
     }
 }
