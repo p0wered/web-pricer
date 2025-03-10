@@ -1,57 +1,74 @@
-version: '3.8'
-
+version: '3'
 services:
     app:
         build:
             context: .
             dockerfile: Dockerfile
-        container_name: laravel_app
+        image: radio-db/app
+        container_name: webpricer-app
         restart: unless-stopped
-        working_dir: /var/www/html
+        tty: true
+        environment:
+            SERVICE_NAME: app
+            SERVICE_TAGS: dev
+        working_dir: /var/www
         volumes:
-            - .:/var/www/html
-        ports:
-            - "${APP_PORT:-8000}:80"
+            - ./:/var/www
+            - ./docker/php/local.ini:/usr/local/etc/php/conf.d/local.ini
         networks:
-            - laravel_network
-        depends_on:
-            - db
+            - webpricer-network
+
+    nginx:
+        image: nginx:alpine
+        container_name: webpricer-nginx
+        restart: unless-stopped
+        tty: true
+        ports:
+            - "80:80"
+            - "443:443"
+        volumes:
+            - ./:/var/www
+            - ./docker/nginx/conf.d/:/etc/nginx/conf.d/
+            - ./docker/nginx/ssl/:/etc/nginx/ssl/
+        networks:
+            - webpricer-network
 
     db:
-        image: mysql:8.4.2
-        container_name: laravel_db
+        image: mysql:8.0
+        container_name: webpricer-db
         restart: unless-stopped
+        tty: true
+        ports:
+            - "3306:3306"
         environment:
-            MYSQL_DATABASE: web_pricer
-            MYSQL_USER: laravel_user
-            MYSQL_PASSWORD: secret
+            MYSQL_DATABASE: radio_db
             MYSQL_ROOT_PASSWORD: secret
+            SERVICE_TAGS: dev
+            SERVICE_NAME: mysql
         volumes:
-            - db_data:/var/lib/mysql
+            - dbdata:/var/lib/mysql/
+            - ./docker/mysql/my.cnf:/etc/mysql/my.cnf
         networks:
-            - laravel_network
+            - webpricer-network
 
     node:
         image: node:20
-        container_name: laravel_node
+        container_name: webpricer-node
         restart: unless-stopped
-        working_dir: /var/www/html
-        environment:
-            - HOST=0.0.0.0
-            - PORT=5173
+        tty: true
+        working_dir: /var/www
         volumes:
-            - .:/var/www/html
+            - ./:/var/www
         ports:
             - "5173:5173"
         command: sh -c "npm install && npm run dev"
         networks:
-            - laravel_network
-        depends_on:
-            - app
-
-volumes:
-    db_data:
+            - webpricer-network
 
 networks:
-    laravel_network:
+    webpricer-network:
         driver: bridge
+
+volumes:
+    dbdata:
+        driver: local

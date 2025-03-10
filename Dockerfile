@@ -1,40 +1,41 @@
-# Используем официальный образ PHP 8.2 с Apache
-FROM php:8.2-apache
+FROM php:8.2-fpm
 
-# Устанавливаем необходимые зависимости
+WORKDIR /var/www
+
 RUN apt-get update && apt-get install -y \
+    build-essential \
+    libpng-dev \
+    libjpeg62-turbo-dev \
+    libfreetype6-dev \
+    locales \
+    zip \
+    jpegoptim optipng pngquant gifsicle \
+    vim \
+    unzip \
     git \
     curl \
-    libpng-dev \
+    libzip-dev \
     libonig-dev \
-    libxml2-dev \
-    zip \
-    unzip \
-    && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
+    libxml2-dev
 
-# Устанавливаем Composer 2.8.4
-COPY --from=composer:2.8.4 /usr/bin/composer /usr/bin/composer
+RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Устанавливаем Node.js 20
+RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath zip
+
+COPY --from=composer:2.8.5 /usr/bin/composer /usr/bin/composer
+
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
-    && apt-get install -y nodejs
+    && apt-get install -y nodejs \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Копируем исходный код проекта
-COPY . /var/www/html
+RUN groupadd -g 1000 www
+RUN useradd -u 1000 -ms /bin/bash -g www www
 
-# Устанавливаем права на папку storage
-RUN chown -R www-data:www-data /var/www/html/storage
+COPY . /var/www
 
-# Устанавливаем зависимости Composer и Node.js
-RUN composer install --no-dev --optimize-autoloader
-RUN npm install && npm run build
+COPY --chown=www:www . /var/www
 
-# Настраиваем Apache
-RUN a2enmod rewrite
-COPY .docker/vhost.conf /etc/apache2/sites-available/000-default.conf
+USER www
 
-# Открываем порт 80
-EXPOSE 80
-
-# Запускаем Apache
-CMD ["apache2-foreground"]
+EXPOSE 9000
+CMD ["php-fpm"]
