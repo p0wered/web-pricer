@@ -6,35 +6,58 @@ use App\Models\MainProduct;
 use App\Models\SpecialProduct;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
+use GuzzleHttp\Client;
 use PhpOffice\PhpSpreadsheet\IOFactory;
-use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 class ImportExcelData extends Command
 {
-    protected $signature = 'import:excel {filename=test.xlsx : Название файла в директории storage}';
+    protected $signature = 'import:excel {--url=https://cloud.gate12a.com/remote.php/dav/files/pricer/Pricer.xlsm}';
     protected $description = 'Импорт данных из Excel файла в базу данных';
     const BATCH_SIZE = 5000;
 
+    private string $username = 'pricer';
+    private string $password = '25d03m2004Y';
+
     public function handle()
     {
-        $filename = $this->argument('filename');
-        $path = storage_path($filename);
+        $url = $this->option('url');
 
-        if (!file_exists($path)) {
-            $this->error("Файл {$path} не найден!");
+        $this->info("Скачиваем файл с: {$url}");
+
+        try {
+            $tempDir = storage_path('app/temp');
+            if (!file_exists($tempDir)) {
+                mkdir($tempDir, 0755, true);
+            }
+
+            $tempFile = $tempDir . '/imported_excel_' . time() . '.xlsm';
+            $client = new Client();
+            $response = $client->get($url, [
+                'auth' => [$this->username, $this->password],
+                'sink' => $tempFile,
+            ]);
+
+            if ($response->getStatusCode() != 200) {
+                $this->error("Ошибка при скачивании файла: " . $response->getStatusCode());
+                return 1;
+            }
+
+            $this->info("Файл успешно скачан: {$tempFile}");
+            $path = $tempFile;
+
+        } catch (\Exception $e) {
+            $this->error("Ошибка при скачивании файла: " . $e->getMessage());
             return 1;
         }
 
-        $this->info("Начинаем импорт данных из файла: {$path}");
+        $this->info("Начинаем импорт данных из файла");
 
         try {
             $spreadsheet = IOFactory::load($path);
 
-            if ($this->confirm('Очистить существующие данные перед импортом?', true)) {
-                MainProduct::truncate();
-                SpecialProduct::truncate();
-                $this->info('Таблицы очищены');
-            }
+            MainProduct::truncate();
+            SpecialProduct::truncate();
+            $this->info('Таблицы очищены');
 
             $sheetNames = $spreadsheet->getSheetNames();
             $totalSheets = count($sheetNames);
@@ -69,7 +92,7 @@ class ImportExcelData extends Command
                     if (empty($row[0])) continue;
 
                     $product = [
-                        'name' => $row[0] ?? '',
+                        'name' => mb_convert_encoding(substr($row[0] ?? '', 0, 255), 'UTF-8', 'auto'),
                         'code' => $row[1] ?? null,
                         'quantity' => is_numeric($row[2] ?? '') ? (float)$row[2] : null,
                         'price' => is_numeric($row[3] ?? '') ? (float)$row[3] : null,
@@ -118,10 +141,20 @@ class ImportExcelData extends Command
             $this->info("Импортировано {$mainProductsCount} записей в основную таблицу");
             $this->info("Импортировано {$specialProductsCount} записей в специальную таблицу");
 
+            if (file_exists($path)) {
+                unlink($path);
+                $this->info("Временный файл удален");
+            }
+
             return 0;
         } catch (\Exception $e) {
             $this->error("Ошибка при импорте данных: " . $e->getMessage());
             $this->error($e->getTraceAsString());
+
+            if (isset($path) && file_exists($path)) {
+                unlink($path);
+            }
+
             return 1;
         }
     }

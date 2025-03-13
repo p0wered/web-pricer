@@ -65,7 +65,8 @@ export default function Index({ auth, mainProducts, specialProducts, search }) {
                                     href={route('logout')}
                                     method="post"
                                     as="button"
-                                    className="text-sm text-gray-700 underline"
+                                    className="text-gray-700 underline"
+                                    style={{fontSize: 18}}
                                 >
                                     Выйти
                                 </Link>
