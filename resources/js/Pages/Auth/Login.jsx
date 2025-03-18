@@ -37,7 +37,7 @@ export default function Login({status}) {
 
             <form onSubmit={submit}>
                 <div className="mt-4">
-                    <InputLabel htmlFor="password" value="Password" />
+                    <InputLabel htmlFor="password" value="Пароль" />
 
                     <TextInput
                         id="password"
@@ -52,9 +52,9 @@ export default function Login({status}) {
                     <InputError message={errors.password} className="mt-2" />
                 </div>
 
-                <div className="mt-4 flex items-center justify-end">
+                <div className="mt-4 flex items-center justify-center">
                     <PrimaryButton className="ms-4" disabled={processing}>
-                        Log in
+                        Вход
                     </PrimaryButton>
                 </div>
             </form>

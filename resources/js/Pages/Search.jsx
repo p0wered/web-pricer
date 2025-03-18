@@ -1,17 +1,15 @@
-import React, {useState} from 'react';
-import {Head, Link, useForm} from '@inertiajs/react';
+import React, {useState, useEffect, useCallback} from 'react';
+import {Head, Link, router} from '@inertiajs/react';
 import Layout from '@/Layouts/AuthenticatedLayout';
 import Pagination from "@/Components/Pagination.jsx";
-
+import debounce from 'lodash/debounce';
 
 export default function Index({ auth, mainProducts, specialProducts, search }) {
-    const { data, setData, post, processing } = useForm({
-        search: search || '',
-    });
-
+    const [searchInput, setSearchInput] = useState(search || '');
     const [sortOrder, setSortOrder] = useState(null);
+    const [isLoading, setIsLoading] = useState(false);
 
-    const sortedProducts = [...mainProducts.data];
+    const sortedProducts = [...(mainProducts.data || [])];
     if (sortOrder !== null) {
         sortedProducts.sort((a, b) => {
             const priceA = parseFloat(a.price) || 0;
@@ -19,6 +17,43 @@ export default function Index({ auth, mainProducts, specialProducts, search }) {
             return sortOrder === "asc" ? priceA - priceB : priceB - priceA;
         });
     }
+
+    const debouncedSearch = useCallback(
+        debounce((value) => {
+            if (value.trim().length > 0) {
+                setIsLoading(true);
+                router.get(route('search.index'), { search: value }, {
+                    preserveState: true,
+                    preserveScroll: true,
+                    only: ['mainProducts', 'specialProducts', 'search'],
+                    onFinish: () => setIsLoading(false)
+                });
+            }
+        }, 500),
+        []
+    );
+
+    useEffect(() => {
+        return () => {
+            debouncedSearch.cancel();
+        };
+    }, []);
+
+    const handleSearchChange = (e) => {
+        const value = e.target.value;
+        setSearchInput(value);
+        debouncedSearch(value);
+    };
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        setIsLoading(true);
+        router.get(route('search.index'), { search: searchInput }, {
+            preserveState: true,
+            only: ['mainProducts', 'specialProducts', 'search'],
+            onFinish: () => setIsLoading(false)
+        });
+    };
 
     const toggleSortOrder = () => {
         if (sortOrder === null) {
@@ -34,11 +69,6 @@ export default function Index({ auth, mainProducts, specialProducts, search }) {
         if (sortOrder === "asc") return "↑";
         if (sortOrder === "desc") return "↓";
         return "↔";
-    };
-
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        post(route('search.search'));
     };
 
     const getSupplierColor = (supplier) => {
@@ -78,14 +108,14 @@ export default function Index({ auth, mainProducts, specialProducts, search }) {
                                     type="text"
                                     className="form-input rounded-md shadow-sm mt-1 block w-full"
                                     style={{border: '1px solid #00000030'}}
-                                    value={data.search}
-                                    onChange={e => setData('search', e.target.value)}
+                                    value={searchInput}
+                                    onChange={handleSearchChange}
                                     placeholder="Введите запрос..."
                                 />
                                 <button
                                     type="submit"
                                     className="ml-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                                    disabled={processing}
+                                    disabled={isLoading}
                                 >
                                     Поиск
                                 </button>
@@ -96,7 +126,7 @@ export default function Index({ auth, mainProducts, specialProducts, search }) {
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-4">
                             <h2 className="text-lg font-semibold mb-4">
-                                Стоп-лист ({specialProducts.total || 0})
+                                Стоп-лист
                             </h2>
                             {specialProducts.data && specialProducts.data.length > 0 ? (
                                 <>
@@ -138,7 +168,7 @@ export default function Index({ auth, mainProducts, specialProducts, search }) {
                         </div>
                         <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-4">
                             <h2 className="text-lg font-semibold mb-4">
-                                Детали ({mainProducts.total || 0})
+                                Детали
                             </h2>
                             {sortedProducts.length > 0 ? (
                                 <>

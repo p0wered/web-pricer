@@ -18,7 +18,6 @@ return new class extends Migration
             $table->string('sheet_name')->index();
             $table->timestamps();
 
-            // Добавляем полнотекстовые индексы для быстрого поиска
             $table->fullText(['name', 'code', 'description']);
         });
     }

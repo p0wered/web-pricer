@@ -1,4 +1,5 @@
 import React, {useState} from 'react';
+import {router} from '@inertiajs/react';
 
 const Pagination = ({links, search, currentPage, lastPage, pageParam = 'page'}) => {
     const [pageInput, setPageInput] = useState(currentPage);
@@ -9,12 +10,32 @@ const Pagination = ({links, search, currentPage, lastPage, pageParam = 'page'}) 
 
     const handlePageChange = (e) => {
         e.preventDefault();
-        const url = new URL(window.location.href);
-        url.searchParams.set(pageParam, pageInput);
-        if (search) {
-            url.searchParams.set('search', search);
-        }
-        window.location.href = url.toString();
+
+        const data = { search: search };
+        data[pageParam] = pageInput;
+
+        router.get(route('search.index'), data, {
+            preserveState: true,
+            preserveScroll: true,
+            only: ['mainProducts', 'specialProducts']
+        });
+    };
+
+    const handleLinkClick = (e, url) => {
+        e.preventDefault();
+        if (!url) return;
+
+        const parsedUrl = new URL(url);
+        const page = parsedUrl.searchParams.get(pageParam);
+
+        const data = { search: search };
+        data[pageParam] = page;
+
+        router.get(route('search.index'), data, {
+            preserveState: true,
+            preserveScroll: true,
+            only: ['mainProducts', 'specialProducts']
+        });
     };
 
     return (
@@ -30,16 +51,11 @@ const Pagination = ({links, search, currentPage, lastPage, pageParam = 'page'}) 
                     );
                 }
 
-                const url = new URL(link.url, window.location.origin);
-
-                if (search) {
-                    url.searchParams.set('search', search);
-                }
-
                 return (
                     <a
                         key={key}
-                        href={url.toString()}
+                        href={link.url}
+                        onClick={(e) => handleLinkClick(e, link.url)}
                         className={`mx-1 px-4 py-2 rounded-md ${
                             link.active ?
                                 'bg-blue-600 text-white' :

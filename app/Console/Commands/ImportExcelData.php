@@ -22,7 +22,7 @@ class ImportExcelData extends Command
     {
         $url = $this->option('url');
 
-        $this->info("Скачиваем файл с: {$url}");
+        $this->info("Скачивание файла...");
 
         try {
             $tempDir = storage_path('app/temp');
@@ -42,7 +42,7 @@ class ImportExcelData extends Command
                 return 1;
             }
 
-            $this->info("Файл успешно скачан: {$tempFile}");
+            $this->info("Временный файл успешно скачан: {$tempFile}");
             $path = $tempFile;
 
         } catch (\Exception $e) {
@@ -50,14 +50,14 @@ class ImportExcelData extends Command
             return 1;
         }
 
-        $this->info("Начинаем импорт данных из файла");
+        $this->info("Подготовка к импорту данных...");
 
         try {
             $spreadsheet = IOFactory::load($path);
 
             MainProduct::truncate();
             SpecialProduct::truncate();
-            $this->info('Таблицы очищены');
+            $this->info('Прошлые данные очищены');
 
             $sheetNames = $spreadsheet->getSheetNames();
             $totalSheets = count($sheetNames);
@@ -137,9 +137,9 @@ class ImportExcelData extends Command
             $bar->finish();
             $this->newLine(2);
 
-            $this->info("Импорт завершен успешно!");
+            $this->info("Импорт завершен успешно");
             $this->info("Импортировано {$mainProductsCount} записей в основную таблицу");
-            $this->info("Импортировано {$specialProductsCount} записей в специальную таблицу");
+            $this->info("Импортировано {$specialProductsCount} записей в стоп таблицу");
 
             if (file_exists($path)) {
                 unlink($path);
