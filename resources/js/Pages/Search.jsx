@@ -1,13 +1,20 @@
-import React, {useState, useEffect, useCallback} from 'react';
-import {Head, Link, router} from '@inertiajs/react';
+import React, {useEffect, useRef, useState} from 'react';
+import { Head, router } from '@inertiajs/react';
 import Layout from '@/Layouts/AuthenticatedLayout';
 import Pagination from "@/Components/Pagination.jsx";
-import debounce from 'lodash/debounce';
 
 export default function Index({ auth, mainProducts, specialProducts, search }) {
     const [searchInput, setSearchInput] = useState(search || '');
     const [sortOrder, setSortOrder] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
+    const inputRef = useRef(null);
+
+    useEffect(() => {
+        if (inputRef.current) {
+            inputRef.current.focus();
+            inputRef.current.lang = 'ru';
+        }
+    }, []);
 
     const sortedProducts = [...(mainProducts.data || [])];
     if (sortOrder !== null) {
@@ -18,31 +25,8 @@ export default function Index({ auth, mainProducts, specialProducts, search }) {
         });
     }
 
-    const debouncedSearch = useCallback(
-        debounce((value) => {
-            if (value.trim().length > 0) {
-                setIsLoading(true);
-                router.get(route('search.index'), { search: value }, {
-                    preserveState: true,
-                    preserveScroll: true,
-                    only: ['mainProducts', 'specialProducts', 'search'],
-                    onFinish: () => setIsLoading(false)
-                });
-            }
-        }, 500),
-        []
-    );
-
-    useEffect(() => {
-        return () => {
-            debouncedSearch.cancel();
-        };
-    }, []);
-
     const handleSearchChange = (e) => {
-        const value = e.target.value;
-        setSearchInput(value);
-        debouncedSearch(value);
+        setSearchInput(e.target.value);
     };
 
     const handleSubmit = (e) => {
@@ -71,6 +55,20 @@ export default function Index({ auth, mainProducts, specialProducts, search }) {
         return "↔";
     };
 
+    const handlePaste = async () => {
+        const text = await navigator.clipboard.readText();
+        setSearchInput(text);
+    };
+
+    const handleCopy = () => {
+        navigator.clipboard.writeText(searchInput);
+    };
+
+    const handleCut = () => {
+        navigator.clipboard.writeText(searchInput);
+        setSearchInput('');
+    };
+
     const getSupplierColor = (supplier) => {
         const colors = [
             "bg-red-100", "bg-green-100", "bg-blue-100",
@@ -88,33 +86,39 @@ export default function Index({ auth, mainProducts, specialProducts, search }) {
             <div className="py-8">
                 <div className="mx-auto sm:px-6 lg:px-8 ">
                     <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 mb-6">
-                        <div className="flex justify-between">
-                            <h1 className="text-2xl font-bold mb-4">Поиск деталей</h1>
-                            <div>
-                                <Link
-                                    href={route('logout')}
-                                    method="post"
-                                    as="button"
-                                    className="text-gray-700 underline"
-                                    style={{fontSize: 18}}
-                                >
-                                    Выйти
-                                </Link>
-                            </div>
-                        </div>
+                        <h1 className="text-2xl font-bold mb-4">Поиск деталей</h1>
                         <form onSubmit={handleSubmit}>
-                            <div className="flex items-center">
+                            <div className="flex items-center gap-2">
                                 <input
+                                    ref={inputRef}
                                     type="text"
-                                    className="form-input rounded-md shadow-sm mt-1 block w-full"
-                                    style={{border: '1px solid #00000030'}}
+                                    className="form-input rounded-md shadow-sm block w-full"
+                                    style={{ border: '1px solid #00000030' }}
                                     value={searchInput}
                                     onChange={handleSearchChange}
                                     placeholder="Введите запрос..."
                                 />
                                 <button
+                                    type="button"
+                                    className="px-4 py-2 bg-gray-200 text-black rounded-md hover:bg-gray-300 transition-colors"
+                                    onClick={handlePaste}>
+                                    Вставить
+                                </button>
+                                <button
+                                    type="button"
+                                    className="px-4 py-2 bg-gray-200 text-black rounded-md hover:bg-gray-300 transition-colors"
+                                    onClick={handleCopy}>
+                                    Копировать
+                                </button>
+                                <button
+                                    type="button"
+                                    className="px-4 py-2 bg-gray-200 text-black rounded-md hover:bg-gray-300 transition-colors"
+                                    onClick={handleCut}>
+                                    Вырезать
+                                </button>
+                                <button
                                     type="submit"
-                                    className="ml-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
                                     disabled={isLoading}
                                 >
                                     Поиск
@@ -138,16 +142,20 @@ export default function Index({ auth, mainProducts, specialProducts, search }) {
                                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Год</th>
                                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Кол-во</th>
                                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Цена</th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Поставщик</th>
                                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Описание</th>
                                             </tr>
                                             </thead>
                                             <tbody className="bg-white divide-y divide-gray-200">
                                             {specialProducts.data.map((product) => (
-                                                <tr key={product.id}>
+                                                <tr key={product.id}
+                                                    className={`${getSupplierColor(product.sheet_name)} hover:bg-opacity-50`}
+                                                >
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{product.name}</td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{product.code}</td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{product.quantity}</td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{product.price}</td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{product.sheet_name}</td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{product.description}</td>
                                                 </tr>
                                             ))}

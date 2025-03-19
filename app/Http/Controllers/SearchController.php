@@ -65,33 +65,10 @@ class SearchController extends Controller
 
         $applySearchConditions = function($query) use ($normalizedSearch, $unifiedSearch) {
             $unifiedSearchLower = strtolower($unifiedSearch);
-            $normalizedSearchLower = strtolower($normalizedSearch);
 
-            $query->where(function($q) use ($normalizedSearch, $unifiedSearch, $unifiedSearchLower, $normalizedSearchLower) {
-                $q->where(DB::raw('LOWER(name)'), '=', $normalizedSearchLower);
-
-                $q->orWhereRaw("LOWER(REPLACE(REPLACE(REPLACE(REPLACE(name, '-', ''), ' ', ''), ',', ''), '.', '')) = ?", [$unifiedSearchLower]);
-
-                if (DB::connection()->getDriverName() === 'mysql') {
-                    $q->orWhereRaw("MATCH(name, code, description) AGAINST(? IN BOOLEAN MODE)", [$normalizedSearch . '*']);
-                } else {
-                    $q->orWhere(DB::raw('LOWER(name)'), 'LIKE', "%{$normalizedSearchLower}%");
-                    $q->orWhere(DB::raw('LOWER(code)'), 'LIKE', "%{$normalizedSearchLower}%");
-                    $q->orWhere(DB::raw('LOWER(description)'), 'LIKE', "%{$normalizedSearchLower}%");
-                }
-
-                $q->orWhereRaw("LOWER(REPLACE(REPLACE(REPLACE(REPLACE(name, '-', ''), ' ', ''), ',', ''), '.', '')) LIKE ?", ["%{$unifiedSearchLower}%"]);
-
-                $tokens = preg_split('/[\s\-,\.]+/', $normalizedSearch);
-                if (count($tokens) > 1) {
-                    $q->orWhere(function($subq) use ($tokens) {
-                        foreach ($tokens as $token) {
-                            if (strlen($token) >= 1) {
-                                $subq->where(DB::raw('LOWER(name)'), 'LIKE', "%".strtolower($token)."%");
-                            }
-                        }
-                    });
-                }
+            $query->where(function($q) use ($unifiedSearchLower) {
+                $q->where('normalized_name', '=', $unifiedSearchLower);
+                $q->orWhere('normalized_name', 'LIKE', "%{$unifiedSearchLower}%");
             });
 
             return $query;

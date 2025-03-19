@@ -10,15 +10,14 @@ return new class extends Migration
     {
         Schema::create('special_products', function (Blueprint $table) {
             $table->id();
-            $table->string('name')->index();
-            $table->string('code')->nullable()->index();
+            $table->string('name');
+            $table->string('normalized_name');
+            $table->string('code')->nullable();
             $table->decimal('quantity', 15, 2)->nullable();
             $table->decimal('price', 15, 2)->nullable();
             $table->text('description')->nullable();
-            $table->string('sheet_name')->index();
+            $table->string('sheet_name');
             $table->timestamps();
-
-            $table->fullText(['name', 'code', 'description']);
         });
     }
 
