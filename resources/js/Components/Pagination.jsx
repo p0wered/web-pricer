@@ -1,91 +1,97 @@
-import React, {useState} from 'react';
-import {router} from '@inertiajs/react';
+import React, { useState } from "react";
 
-const Pagination = ({links, search, currentPage, lastPage, pageParam = 'page'}) => {
-    const [pageInput, setPageInput] = useState(currentPage);
+export default function Pagination({ links, currentPage, lastPage, onPageChange }) {
+    const visiblePages = 3;
+    const [inputPage, setInputPage] = useState(currentPage);
 
-    if (links.length <= 3) {
-        return null;
-    }
+    const generatePageNumbers = () => {
+        const pages = [];
+        if (lastPage <= visiblePages + 2) {
+            for (let i = 1; i <= lastPage; i++) {
+                pages.push(i);
+            }
+        } else {
+            pages.push(1);
+            if (currentPage > visiblePages) {
+                pages.push("...");
+            }
 
-    const handlePageChange = (e) => {
-        e.preventDefault();
+            let start = Math.max(2, currentPage - 1);
+            let end = Math.min(lastPage - 1, currentPage + 1);
+            for (let i = start; i <= end; i++) {
+                pages.push(i);
+            }
 
-        const data = { search: search };
-        data[pageParam] = pageInput;
-
-        router.get(route('search.index'), data, {
-            preserveState: true,
-            preserveScroll: true,
-            only: ['mainProducts', 'specialProducts']
-        });
+            if (currentPage < lastPage - visiblePages) {
+                pages.push("...");
+            }
+            pages.push(lastPage);
+        }
+        return pages;
     };
 
-    const handleLinkClick = (e, url) => {
+    const handleInputChange = (e) => {
+        setInputPage(e.target.value);
+    };
+
+    const handlePageSubmit = (e) => {
         e.preventDefault();
-        if (!url) return;
-
-        const parsedUrl = new URL(url);
-        const page = parsedUrl.searchParams.get(pageParam);
-
-        const data = { search: search };
-        data[pageParam] = page;
-
-        router.get(route('search.index'), data, {
-            preserveState: true,
-            preserveScroll: true,
-            only: ['mainProducts', 'specialProducts']
-        });
+        const pageNumber = Number(inputPage);
+        if (pageNumber >= 1 && pageNumber <= lastPage) {
+            onPageChange(pageNumber);
+        }
     };
 
     return (
-        <div className="flex flex-wrap justify-center mt-4 items-center">
-            {links.map((link, key) => {
-                if (link.url === null) {
-                    return (
-                        <span
-                            key={key}
-                            className="mx-1 px-4 py-2 text-gray-500 bg-gray-200 rounded-md"
-                            dangerouslySetInnerHTML={{ __html: link.label }}
-                        />
-                    );
-                }
+        <div className="flex items-center justify-center mt-4 space-x-2">
+            <button
+                onClick={() => onPageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                className={`px-3 py-2 border text-sm font-medium rounded-md ${
+                    currentPage === 1 ? "opacity-50 cursor-not-allowed" : "hover:bg-gray-100"
+                }`}
+            >
+                &laquo;
+            </button>
 
-                return (
-                    <a
-                        key={key}
-                        href={link.url}
-                        onClick={(e) => handleLinkClick(e, link.url)}
-                        className={`mx-1 px-4 py-2 rounded-md ${
-                            link.active ?
-                                'bg-blue-600 text-white' :
-                                'bg-white text-blue-600 hover:bg-gray-100'
-                        }`}
-                        dangerouslySetInnerHTML={{ __html: link.label }}
+            <div className="flex">
+                <div className="flex space-x-1 mr-1">
+                    {generatePageNumbers().map((page, index) => (
+                        <button
+                            key={index}
+                            onClick={() => typeof page === "number" && onPageChange(page)}
+                            className={`px-3 py-2 border text-sm font-medium rounded-md ${
+                                page === currentPage ? "bg-blue-600 text-white" : "hover:bg-gray-100"
+                            } ${typeof page === "string" ? "cursor-default" : ""}`}
+                            disabled={typeof page === "string"}
+                        >
+                            {page}
+                        </button>
+                    ))}
+                </div>
+                <form onSubmit={handlePageSubmit} className="flex items-center space-x-1">
+                    <input
+                        type="number"
+                        value={inputPage}
+                        onChange={handleInputChange}
+                        className="w-16 px-2 py-1 border rounded-md text-center"
+                        style={{border: '1px solid #e0e0e2', height: '100%'}}
                     />
-                );
-            })}
+                    <button type="submit" className="px-3 py-2 border text-sm font-medium rounded-md bg-blue-600 text-white hover:bg-blue-600">
+                        Перейти
+                    </button>
+                </form>
+            </div>
 
-            <form onSubmit={handlePageChange} className="ml-4 flex items-center">
-                <span className="mr-2">Страница:</span>
-                <input
-                    type="number"
-                    min="1"
-                    max={lastPage}
-                    value={pageInput}
-                    onChange={(e) => setPageInput(e.target.value)}
-                    className="w-16 px-2 py-1 border rounded-md"
-                />
-                <span style={{marginLeft: '0.5rem', marginRight: '1rem'}}>из {lastPage}</span>
-                <button
-                    type="submit"
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                >
-                    Перейти
-                </button>
-            </form>
+            <button
+                onClick={() => onPageChange(currentPage + 1)}
+                disabled={currentPage === lastPage}
+                className={`px-3 py-2 border text-sm font-medium rounded-md ${
+                    currentPage === lastPage ? "opacity-50 cursor-not-allowed" : "hover:bg-gray-100"
+                }`}
+            >
+                &raquo;
+            </button>
         </div>
     );
-};
-
-export default Pagination;
+}

@@ -1,22 +1,100 @@
 import React, {useEffect, useRef, useState} from 'react';
-import { Head, router } from '@inertiajs/react';
+import {Head, Link, router} from '@inertiajs/react';
 import Layout from '@/Layouts/AuthenticatedLayout';
 import Pagination from "@/Components/Pagination.jsx";
 
-export default function Index({ auth, mainProducts, specialProducts, search }) {
+export default function Index({ auth, mainProducts, specialProducts, search, allData }) {
     const [searchInput, setSearchInput] = useState(search || '');
     const [sortOrder, setSortOrder] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
     const inputRef = useRef(null);
 
+    const [localMainPage, setLocalMainPage] = useState(mainProducts?.current_page || 1);
+    const [localMainProducts, setLocalMainProducts] = useState(mainProducts);
+
+    const [localSpecialPage, setLocalSpecialPage] = useState(specialProducts?.current_page || 1);
+    const [localSpecialProducts, setLocalSpecialProducts] = useState(specialProducts);
+
+    const hasFullData = allData && allData.mainProductsAll && allData.specialProductsAll;
+
+    useEffect(() => {
+        if (hasFullData) {
+            const perPage = 15;
+
+            const mainStart = (localMainPage - 1) * perPage;
+            const mainEnd = mainStart + perPage;
+            const mainCurrentItems = allData.mainProductsAll.slice(mainStart, mainEnd);
+
+            const mainPaginator = {
+                data: mainCurrentItems,
+                current_page: localMainPage,
+                last_page: Math.ceil(allData.mainProductsAll.length / perPage),
+                links: generatePaginationLinks(localMainPage, Math.ceil(allData.mainProductsAll.length / perPage))
+            };
+
+            setLocalMainProducts(mainPaginator);
+
+            const specialStart = (localSpecialPage - 1) * perPage;
+            const specialEnd = specialStart + perPage;
+            const specialCurrentItems = allData.specialProductsAll.slice(specialStart, specialEnd);
+
+            const specialPaginator = {
+                data: specialCurrentItems,
+                current_page: localSpecialPage,
+                last_page: Math.ceil(allData.specialProductsAll.length / perPage),
+                links: generatePaginationLinks(localSpecialPage, Math.ceil(allData.specialProductsAll.length / perPage))
+            };
+
+            setLocalSpecialProducts(specialPaginator);
+        }
+    }, [localMainPage, localSpecialPage, hasFullData]);
+
+    const generatePaginationLinks = (currentPage, lastPage) => {
+        const links = [];
+
+        links.push({
+            url: currentPage > 1 ? '#' : null,
+            label: '&laquo; Назад',
+            active: false
+        });
+
+        for (let i = 1; i <= lastPage; i++) {
+            links.push({
+                url: '#',
+                label: i.toString(),
+                active: i === currentPage
+            });
+        }
+
+        links.push({
+            url: currentPage < lastPage ? '#' : null,
+            label: 'Вперед &raquo;',
+            active: false
+        });
+
+        return links;
+    };
+
+    const handleMainPageChange = (page) => {
+        setLocalMainPage(page);
+    };
+
+    const handleSpecialPageChange = (page) => {
+        setLocalSpecialPage(page);
+    };
+
     useEffect(() => {
         if (inputRef.current) {
-            inputRef.current.focus();
-            inputRef.current.lang = 'ru';
+            inputRef.current.addEventListener('focus', () => {
+                navigator.keyboard?.lock(['ru']);
+            });
         }
     }, []);
 
-    const sortedProducts = [...(mainProducts.data || [])];
+    const displayMainProducts = hasFullData ? localMainProducts : mainProducts;
+    const displaySpecialProducts = hasFullData ? localSpecialProducts : specialProducts;
+
+    const sortedProducts = [...(displayMainProducts.data || [])];
     if (sortOrder !== null) {
         sortedProducts.sort((a, b) => {
             const priceA = parseFloat(a.price) || 0;
@@ -34,7 +112,7 @@ export default function Index({ auth, mainProducts, specialProducts, search }) {
         setIsLoading(true);
         router.get(route('search.index'), { search: searchInput }, {
             preserveState: true,
-            only: ['mainProducts', 'specialProducts', 'search'],
+            only: ['mainProducts', 'specialProducts', 'search', 'allData'],
             onFinish: () => setIsLoading(false)
         });
     };
@@ -83,17 +161,28 @@ export default function Index({ auth, mainProducts, specialProducts, search }) {
     return (
         <Layout auth={auth}>
             <Head title="Поиск деталей" />
-            <div className="py-8">
-                <div className="mx-auto sm:px-6 lg:px-8 ">
-                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 mb-6">
-                        <h1 className="text-2xl font-bold mb-4">Поиск деталей</h1>
+            <div className="py-4">
+                <div className="mx-auto sm:px-6 lg:px-4 ">
+                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-4 mb-4">
+                        <div className="flex justify-between items-start">
+                            <h1 className="text-2xl font-bold mb-3">Поиск деталей</h1>
+                            <Link
+                                href={route('logout')}
+                                method="post"
+                                as="button"
+                                className="text-gray-700 underline"
+                                style={{fontSize: 16}}
+                            >
+                                Выйти
+                            </Link>
+                        </div>
                         <form onSubmit={handleSubmit}>
                             <div className="flex items-center gap-2">
                                 <input
-                                    ref={inputRef}
                                     type="text"
+                                    ref={inputRef}
                                     className="form-input rounded-md shadow-sm block w-full"
-                                    style={{ border: '1px solid #00000030' }}
+                                    style={{border: '1px solid #00000030'}}
                                     value={searchInput}
                                     onChange={handleSearchChange}
                                     placeholder="Введите запрос..."
@@ -126,13 +215,12 @@ export default function Index({ auth, mainProducts, specialProducts, search }) {
                             </div>
                         </form>
                     </div>
-
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                         <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-4">
                             <h2 className="text-lg font-semibold mb-4">
                                 Стоп-лист
                             </h2>
-                            {specialProducts.data && specialProducts.data.length > 0 ? (
+                            {displaySpecialProducts.data && displaySpecialProducts.data.length > 0 ? (
                                 <>
                                     <div className="overflow-x-auto">
                                         <table className="min-w-full divide-y divide-gray-200">
@@ -147,7 +235,7 @@ export default function Index({ auth, mainProducts, specialProducts, search }) {
                                             </tr>
                                             </thead>
                                             <tbody className="bg-white divide-y divide-gray-200">
-                                            {specialProducts.data.map((product) => (
+                                            {displaySpecialProducts.data.map((product) => (
                                                 <tr key={product.id}
                                                     className={`${getSupplierColor(product.sheet_name)} hover:bg-opacity-50`}
                                                 >
@@ -162,13 +250,22 @@ export default function Index({ auth, mainProducts, specialProducts, search }) {
                                             </tbody>
                                         </table>
                                     </div>
-                                    <Pagination
-                                        links={specialProducts.links}
-                                        search={search}
-                                        currentPage={specialProducts.current_page}
-                                        lastPage={specialProducts.last_page}
-                                        pageParam="special_page"
-                                    />
+                                    {hasFullData ? (
+                                        <Pagination
+                                            links={displaySpecialProducts.links}
+                                            currentPage={localSpecialPage}
+                                            lastPage={displaySpecialProducts.last_page}
+                                            onPageChange={handleSpecialPageChange}
+                                        />
+                                    ) : (
+                                        <Pagination
+                                            links={specialProducts.links}
+                                            currentPage={specialProducts.current_page}
+                                            lastPage={specialProducts.last_page}
+                                            onPageChange={handleSpecialPageChange}
+                                        />
+                                    )}
+
                                 </>
                             ) : (
                                 <p className="text-gray-500">Нет данных для отображения</p>
@@ -236,13 +333,22 @@ export default function Index({ auth, mainProducts, specialProducts, search }) {
                                             </tbody>
                                         </table>
                                     </div>
-                                    <Pagination
-                                        links={mainProducts.links}
-                                        search={search}
-                                        currentPage={mainProducts.current_page}
-                                        lastPage={mainProducts.last_page}
-                                        pageParam="main_page"
-                                    />
+                                    {hasFullData ? (
+                                        <Pagination
+                                            links={displayMainProducts.links}
+                                            currentPage={localMainPage}
+                                            lastPage={displayMainProducts.last_page}
+                                            onPageChange={handleMainPageChange}
+                                        />
+                                    ) : (
+                                        <Pagination
+                                            links={mainProducts.links}
+                                            currentPage={mainProducts.current_page}
+                                            lastPage={mainProducts.last_page}
+                                            onPageChange={handleMainPageChange}
+                                        />
+                                    )}
+
                                 </>
                             ) : (
                                 <p className="text-gray-500">Нет данных для отображения</p>

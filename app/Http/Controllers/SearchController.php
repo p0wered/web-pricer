@@ -50,100 +50,116 @@ class SearchController extends Controller
             return redirect()->route('search.index');
         }
 
-        $cacheKey = "search_results_{$search}_{$mainPage}_{$specialPage}";
+        $cacheKey = "search_results_{$search}";
 
         $cachedResults = Cache::get($cacheKey);
-        if ($cachedResults) {
-            return Inertia::render('Search', $cachedResults);
-        }
 
-        $normalizedSearch = preg_replace('/\s+/', ' ', trim($search));
-        $unifiedSearch = $this->unifyString($normalizedSearch);
+        if (!$cachedResults) {
+            $normalizedSearch = preg_replace('/\s+/', ' ', trim($search));
+            $unifiedSearch = $this->unifyString($normalizedSearch);
 
-        $mainProducts = MainProduct::query();
-        $specialProducts = SpecialProduct::query();
+            $mainProducts = MainProduct::query();
+            $specialProducts = SpecialProduct::query();
 
-        $applySearchConditions = function($query) use ($normalizedSearch, $unifiedSearch) {
-            $unifiedSearchLower = strtolower($unifiedSearch);
+            $applySearchConditions = function($query) use ($normalizedSearch, $unifiedSearch) {
+                $unifiedSearchLower = strtolower($unifiedSearch);
 
-            $query->where(function($q) use ($unifiedSearchLower) {
-                $q->where('normalized_name', '=', $unifiedSearchLower);
-                $q->orWhere('normalized_name', 'LIKE', "%{$unifiedSearchLower}%");
-            });
+                $query->where(function($q) use ($unifiedSearchLower) {
+                    $q->where('normalized_name', '=', $unifiedSearchLower);
+                    $q->orWhere('normalized_name', 'LIKE', "%{$unifiedSearchLower}%");
+                });
 
-            return $query;
-        };
+                return $query;
+            };
 
-        $mainProducts = $applySearchConditions($mainProducts);
-        $specialProducts = $applySearchConditions($specialProducts);
+            $mainProducts = $applySearchConditions($mainProducts);
+            $specialProducts = $applySearchConditions($specialProducts);
 
-        $orderByRelevance = function($query) use ($normalizedSearch, $unifiedSearch) {
-            $normalizedSearchLower = strtolower($normalizedSearch);
-            $unifiedSearchLower = strtolower($unifiedSearch);
+            $orderByRelevance = function($query) use ($normalizedSearch, $unifiedSearch) {
+                $normalizedSearchLower = strtolower($normalizedSearch);
+                $unifiedSearchLower = strtolower($unifiedSearch);
 
-            $relevanceScore = '(';
-            $relevanceScore .= "CASE WHEN LOWER(name) = ? THEN 1000 ELSE 0 END + ";
-            $relevanceScore .= "CASE WHEN LOWER(REPLACE(REPLACE(REPLACE(REPLACE(name, '-', ''), ' ', ''), ',', ''), '.', '')) = ? THEN 900 ELSE 0 END + ";
-            $relevanceScore .= "CASE WHEN LOWER(name) LIKE ? THEN 800 ELSE 0 END + ";
-            $relevanceScore .= "CASE WHEN LOWER(REPLACE(REPLACE(REPLACE(REPLACE(name, '-', ''), ' ', ''), ',', ''), '.', '')) LIKE ? THEN 700 ELSE 0 END + ";
-            $relevanceScore .= "CASE WHEN LOWER(name) LIKE ? THEN 600 ELSE 0 END + ";
-            $relevanceScore .= "CASE WHEN LOWER(REPLACE(REPLACE(REPLACE(REPLACE(name, '-', ''), ' ', ''), ',', ''), '.', '')) LIKE ? THEN 500 ELSE 0 END";
+                $relevanceScore = '(';
+                $relevanceScore .= "CASE WHEN LOWER(name) = ? THEN 1000 ELSE 0 END + ";
+                $relevanceScore .= "CASE WHEN LOWER(REPLACE(REPLACE(REPLACE(REPLACE(name, '-', ''), ' ', ''), ',', ''), '.', '')) = ? THEN 900 ELSE 0 END + ";
+                $relevanceScore .= "CASE WHEN LOWER(name) LIKE ? THEN 800 ELSE 0 END + ";
+                $relevanceScore .= "CASE WHEN LOWER(REPLACE(REPLACE(REPLACE(REPLACE(name, '-', ''), ' ', ''), ',', ''), '.', '')) LIKE ? THEN 700 ELSE 0 END + ";
+                $relevanceScore .= "CASE WHEN LOWER(name) LIKE ? THEN 600 ELSE 0 END + ";
+                $relevanceScore .= "CASE WHEN LOWER(REPLACE(REPLACE(REPLACE(REPLACE(name, '-', ''), ' ', ''), ',', ''), '.', '')) LIKE ? THEN 500 ELSE 0 END";
 
-            $tokens = preg_split('/[\s\-,\.]+/', $normalizedSearch);
-            foreach ($tokens as $index => $token) {
-                if (strlen($token) >= 2) {
-                    $score = 400 - ($index * 10);
-                    $relevanceScore .= " + CASE WHEN LOWER(name) LIKE ? THEN {$score} ELSE 0 END";
+                $tokens = preg_split('/[\s\-,\.]+/', $normalizedSearch);
+                foreach ($tokens as $index => $token) {
+                    if (strlen($token) >= 2) {
+                        $score = 400 - ($index * 10);
+                        $relevanceScore .= " + CASE WHEN LOWER(name) LIKE ? THEN {$score} ELSE 0 END";
+                    }
                 }
-            }
 
-            $relevanceScore .= ")";
+                $relevanceScore .= ")";
 
-            $params = [
-                $normalizedSearchLower,
-                $unifiedSearchLower,
-                $normalizedSearchLower . "%",
-                $unifiedSearchLower . "%",
-                "%" . $normalizedSearchLower . "%",
-                "%" . $unifiedSearchLower . "%"
+                $params = [
+                    $normalizedSearchLower,
+                    $unifiedSearchLower,
+                    $normalizedSearchLower . "%",
+                    $unifiedSearchLower . "%",
+                    "%" . $normalizedSearchLower . "%",
+                    "%" . $unifiedSearchLower . "%"
+                ];
+
+                foreach ($tokens as $token) {
+                    if (strlen($token) >= 2) {
+                        $params[] = "%" . strtolower($token) . "%";
+                    }
+                }
+
+                $query->orderByRaw("{$relevanceScore} DESC", $params)
+                    ->orderBy('name', 'ASC');
+
+                return $query;
+            };
+
+            $mainProducts = $orderByRelevance($mainProducts);
+            $specialProducts = $orderByRelevance($specialProducts);
+
+            $mainProductsAll = $mainProducts->get(['id', 'name', 'code', 'quantity', 'price', 'sheet_name', 'description']);
+            $specialProductsAll = $specialProducts->get(['id', 'name', 'code', 'quantity', 'price', 'sheet_name', 'description']);
+
+            $cachedResults = [
+                'mainProductsAll' => $mainProductsAll,
+                'specialProductsAll' => $specialProductsAll
             ];
 
-            foreach ($tokens as $token) {
-                if (strlen($token) >= 2) {
-                    $params[] = "%" . strtolower($token) . "%";
-                }
-            }
+            Cache::put($cacheKey, $cachedResults, now()->addMinutes(15));
+        }
 
-            $query->orderByRaw("{$relevanceScore} DESC", $params)
-                ->orderBy('name', 'ASC');
+        $mainProductsCollection = collect($cachedResults['mainProductsAll']);
+        $specialProductsCollection = collect($cachedResults['specialProductsAll']);
 
-            return $query;
-        };
-
-        $mainProducts = $orderByRelevance($mainProducts);
-        $specialProducts = $orderByRelevance($specialProducts);
-
-        $mainProductsResults = $mainProducts->paginate(
+        $mainProductsPaginator = new \Illuminate\Pagination\LengthAwarePaginator(
+            $mainProductsCollection->forPage($mainPage, $perPage),
+            $mainProductsCollection->count(),
             $perPage,
-            ['id', 'name', 'code', 'quantity', 'price', 'sheet_name', 'description'],
-            'main_page'
-        )->withQueryString();
+            $mainPage,
+            ['path' => \Illuminate\Support\Facades\Request::url(), 'query' => ['main_page' => $mainPage, 'special_page' => $specialPage, 'search' => $search]]
+        );
 
-        $specialProductsResults = $specialProducts->paginate(
+        $specialProductsPaginator = new \Illuminate\Pagination\LengthAwarePaginator(
+            $specialProductsCollection->forPage($specialPage, $perPage),
+            $specialProductsCollection->count(),
             $perPage,
-            ['id', 'name', 'code', 'quantity', 'price', 'description'],
-            'special_page'
-        )->withQueryString();
+            $specialPage,
+            ['path' => \Illuminate\Support\Facades\Request::url(), 'query' => ['main_page' => $mainPage, 'special_page' => $specialPage, 'search' => $search]]
+        );
 
-        $results = [
-            'mainProducts' => $mainProductsResults,
-            'specialProducts' => $specialProductsResults,
-            'search' => $search
-        ];
-
-        Cache::put($cacheKey, $results, now()->addMinutes(15));
-
-        return Inertia::render('Search', $results);
+        return Inertia::render('Search', [
+            'mainProducts' => $mainProductsPaginator,
+            'specialProducts' => $specialProductsPaginator,
+            'search' => $search,
+            'allData' => [
+                'mainProductsAll' => $cachedResults['mainProductsAll'],
+                'specialProductsAll' => $cachedResults['specialProductsAll']
+            ]
+        ]);
     }
 
     private function unifyString($string)
