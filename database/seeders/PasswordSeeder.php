@@ -11,7 +11,7 @@ class PasswordSeeder extends Seeder
     public function run(): void
     {
         Password::create([
-            'password' => Hash::make('12351235')
+            'password' => Hash::make('12341234')
         ]);
     }
 }

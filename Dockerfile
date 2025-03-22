@@ -1,41 +1,35 @@
-FROM php:8.2-fpm
-
-WORKDIR /var/www
+FROM php:8.4-fpm
 
 RUN apt-get update && apt-get install -y \
-    build-essential \
+    apt-utils \
     libpng-dev \
-    libjpeg62-turbo-dev \
+    libjpeg-dev \
     libfreetype6-dev \
-    locales \
     zip \
-    jpegoptim optipng pngquant gifsicle \
-    vim \
     unzip \
     git \
     curl \
-    libzip-dev \
     libonig-dev \
-    libxml2-dev
+    libxml2-dev \
+    libzip-dev \
+    && docker-php-ext-install pdo pdo_mysql mbstring exif pcntl bcmath gd zip
 
-RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+COPY --from=composer:2.8 /usr/bin/composer /usr/bin/composer
 
-RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath zip
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+    apt-get install -y nodejs
 
-COPY --from=composer:2.8.5 /usr/bin/composer /usr/bin/composer
+WORKDIR /var/www
 
-RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
-    && apt-get install -y nodejs \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
+COPY . .
 
-RUN groupadd -g 1000 www
-RUN useradd -u 1000 -ms /bin/bash -g www www
+RUN composer install --no-dev --no-scripts --optimize-autoloader
+RUN npm install && npm run build
 
-COPY . /var/www
+RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
 
-COPY --chown=www:www . /var/www
+RUN echo "upload_max_filesize=512M" >> /usr/local/etc/php/conf.d/custom.ini && \
+    echo "post_max_size=512M" >> /usr/local/etc/php/conf.d/custom.ini && \
+    echo "memory_limit=-1" >> /usr/local/etc/php/conf.d/custom.ini
 
-USER www
-
-EXPOSE 9000
 CMD ["php-fpm"]

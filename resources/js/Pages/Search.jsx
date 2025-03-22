@@ -5,49 +5,67 @@ import Pagination from "@/Components/Pagination.jsx";
 
 export default function Index({ auth, mainProducts, specialProducts, search, allData }) {
     const [searchInput, setSearchInput] = useState(search || '');
-    const [sortOrder, setSortOrder] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
     const inputRef = useRef(null);
 
     const [localMainPage, setLocalMainPage] = useState(mainProducts?.current_page || 1);
     const [localMainProducts, setLocalMainProducts] = useState(mainProducts);
+    const [mainSortOrder, setMainSortOrder] = useState(null);
 
     const [localSpecialPage, setLocalSpecialPage] = useState(specialProducts?.current_page || 1);
     const [localSpecialProducts, setLocalSpecialProducts] = useState(specialProducts);
+    const [specialSortOrder, setSpecialSortOrder] = useState(null);
 
     const hasFullData = allData && allData.mainProductsAll && allData.specialProductsAll;
+
+    const sortByPrice = (data, sortOrder) => {
+        if (!sortOrder) return data;
+
+        return [...data].sort((a, b) => {
+            const priceA = a.price ? parseFloat(a.price) : null;
+            const priceB = b.price ? parseFloat(b.price) : null;
+
+            if (priceA === null && priceB === null) return 0;
+            if (priceA === null) return 1;
+            if (priceB === null) return -1;
+
+            return sortOrder === "asc" ? priceA - priceB : priceB - priceA;
+        });
+    };
 
     useEffect(() => {
         if (hasFullData) {
             const perPage = 15;
 
+            const sortedMainProducts = sortByPrice(allData.mainProductsAll, mainSortOrder);
             const mainStart = (localMainPage - 1) * perPage;
             const mainEnd = mainStart + perPage;
-            const mainCurrentItems = allData.mainProductsAll.slice(mainStart, mainEnd);
+            const mainCurrentItems = sortedMainProducts.slice(mainStart, mainEnd);
 
             const mainPaginator = {
                 data: mainCurrentItems,
                 current_page: localMainPage,
-                last_page: Math.ceil(allData.mainProductsAll.length / perPage),
-                links: generatePaginationLinks(localMainPage, Math.ceil(allData.mainProductsAll.length / perPage))
+                last_page: Math.ceil(sortedMainProducts.length / perPage),
+                links: generatePaginationLinks(localMainPage, Math.ceil(sortedMainProducts.length / perPage))
             };
 
             setLocalMainProducts(mainPaginator);
 
+            const sortedSpecialProducts = sortByPrice(allData.specialProductsAll, specialSortOrder);
             const specialStart = (localSpecialPage - 1) * perPage;
             const specialEnd = specialStart + perPage;
-            const specialCurrentItems = allData.specialProductsAll.slice(specialStart, specialEnd);
+            const specialCurrentItems = sortedSpecialProducts.slice(specialStart, specialEnd);
 
             const specialPaginator = {
                 data: specialCurrentItems,
                 current_page: localSpecialPage,
-                last_page: Math.ceil(allData.specialProductsAll.length / perPage),
-                links: generatePaginationLinks(localSpecialPage, Math.ceil(allData.specialProductsAll.length / perPage))
+                last_page: Math.ceil(sortedSpecialProducts.length / perPage),
+                links: generatePaginationLinks(localSpecialPage, Math.ceil(sortedSpecialProducts.length / perPage))
             };
 
             setLocalSpecialProducts(specialPaginator);
         }
-    }, [localMainPage, localSpecialPage, hasFullData]);
+    }, [localMainPage, localSpecialPage, mainSortOrder, specialSortOrder, hasFullData]);
 
     const generatePaginationLinks = (currentPage, lastPage) => {
         const links = [];
@@ -83,6 +101,28 @@ export default function Index({ auth, mainProducts, specialProducts, search, all
         setLocalSpecialPage(page);
     };
 
+    const handleMainSortChange = () => {
+        if (mainSortOrder === null) {
+            setMainSortOrder("asc");
+        } else if (mainSortOrder === "asc") {
+            setMainSortOrder("desc");
+        } else {
+            setMainSortOrder(null);
+        }
+        setLocalMainPage(1);
+    };
+
+    const handleSpecialSortChange = () => {
+        if (specialSortOrder === null) {
+            setSpecialSortOrder("asc");
+        } else if (specialSortOrder === "asc") {
+            setSpecialSortOrder("desc");
+        } else {
+            setSpecialSortOrder(null);
+        }
+        setLocalSpecialPage(1);
+    };
+
     useEffect(() => {
         if (inputRef.current) {
             inputRef.current.addEventListener('focus', () => {
@@ -93,15 +133,6 @@ export default function Index({ auth, mainProducts, specialProducts, search, all
 
     const displayMainProducts = hasFullData ? localMainProducts : mainProducts;
     const displaySpecialProducts = hasFullData ? localSpecialProducts : specialProducts;
-
-    const sortedProducts = [...(displayMainProducts.data || [])];
-    if (sortOrder !== null) {
-        sortedProducts.sort((a, b) => {
-            const priceA = parseFloat(a.price) || 0;
-            const priceB = parseFloat(b.price) || 0;
-            return sortOrder === "asc" ? priceA - priceB : priceB - priceA;
-        });
-    }
 
     const handleSearchChange = (e) => {
         setSearchInput(e.target.value);
@@ -115,22 +146,6 @@ export default function Index({ auth, mainProducts, specialProducts, search, all
             only: ['mainProducts', 'specialProducts', 'search', 'allData'],
             onFinish: () => setIsLoading(false)
         });
-    };
-
-    const toggleSortOrder = () => {
-        if (sortOrder === null) {
-            setSortOrder("asc");
-        } else if (sortOrder === "asc") {
-            setSortOrder("desc");
-        } else {
-            setSortOrder(null);
-        }
-    };
-
-    const getSortSymbol = () => {
-        if (sortOrder === "asc") return "↑";
-        if (sortOrder === "desc") return "↓";
-        return "↔";
     };
 
     const handlePaste = async () => {
@@ -150,12 +165,18 @@ export default function Index({ auth, mainProducts, specialProducts, search, all
     const getSupplierColor = (supplier) => {
         const colors = [
             "bg-red-100", "bg-green-100", "bg-blue-100",
-            "bg-yellow-100", "bg-purple-100", "bg-pink-100",
+            "bg-purple-100", "bg-pink-100", "bg-yellow-100",
             "bg-gray-100", "bg-indigo-100", "bg-teal-100",
-            "bg-amber-100", "bg-lime-100", "bg-sky-100"
+            "bg-amber-100", "bg-lime-100", "bg-sky-100",
+            "bg-fuchsia-100"
         ];
         const index = supplier ? supplier.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0) % colors.length : 0;
         return colors[index];
+    };
+
+    const SortIndicator = ({ sortOrder }) => {
+        if (sortOrder === null) return <span className="ml-1">↔</span>;
+        return sortOrder === "asc" ? <span className="ml-1">↑</span> : <span className="ml-1">↓</span>;
     };
 
     return (
@@ -229,7 +250,12 @@ export default function Index({ auth, mainProducts, specialProducts, search, all
                                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Название</th>
                                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Год</th>
                                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Кол-во</th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Цена</th>
+                                                <th
+                                                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                                                    onClick={handleSpecialSortChange}
+                                                >
+                                                    Цена <SortIndicator sortOrder={specialSortOrder} />
+                                                </th>
                                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Поставщик</th>
                                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Описание</th>
                                             </tr>
@@ -275,7 +301,7 @@ export default function Index({ auth, mainProducts, specialProducts, search, all
                             <h2 className="text-lg font-semibold mb-4">
                                 Детали
                             </h2>
-                            {sortedProducts.length > 0 ? (
+                            {displayMainProducts.data && displayMainProducts.data.length > 0 ? (
                                 <>
                                     <div className="overflow-x-auto">
                                         <table className="min-w-full divide-y divide-gray-200">
@@ -292,9 +318,9 @@ export default function Index({ auth, mainProducts, specialProducts, search, all
                                                 </th>
                                                 <th
                                                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer"
-                                                    onClick={toggleSortOrder}
+                                                    onClick={handleMainSortChange}
                                                 >
-                                                    Цена <span className='text-blue-600'>{getSortSymbol()}</span>
+                                                    Цена <SortIndicator sortOrder={mainSortOrder} />
                                                 </th>
                                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                                                     Поставщик
@@ -305,7 +331,7 @@ export default function Index({ auth, mainProducts, specialProducts, search, all
                                             </tr>
                                             </thead>
                                             <tbody className="bg-white divide-y divide-gray-200">
-                                            {sortedProducts.map((product) => (
+                                            {displayMainProducts.data.map((product) => (
                                                 <tr
                                                     key={product.id}
                                                     className={`${getSupplierColor(product.sheet_name)} hover:bg-opacity-50`}

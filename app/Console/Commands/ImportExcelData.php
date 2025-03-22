@@ -11,16 +11,15 @@ use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class ImportExcelData extends Command
 {
-    protected $signature = 'import:excel {--url=https://cloud.gate12a.com/remote.php/dav/files/pricer/Pricer.xlsm}';
+    protected $signature = 'import:excel';
     protected $description = 'Импорт данных из Excel файла в базу данных';
     const BATCH_SIZE = 5000;
 
-    private string $username = 'pricer';
-    private string $password = '25d03m2004Y';
-
     public function handle()
     {
-        $url = $this->option('url');
+        $url = env('EXCEL_IMPORT_URL', 'https://cloud.gate12a.com/remote.php/dav/files/pricer/Pricer.xlsm');
+        $username = env('EXCEL_IMPORT_USERNAME', 'pricer');
+        $password = env('EXCEL_IMPORT_PASSWORD', '25d03m2004Y');
 
         $this->info("Скачивание файла...");
 
@@ -33,7 +32,7 @@ class ImportExcelData extends Command
             $tempFile = $tempDir . '/imported_excel_' . time() . '.xlsm';
             $client = new Client();
             $response = $client->get($url, [
-                'auth' => [$this->username, $this->password],
+                'auth' => [$username, $password],
                 'sink' => $tempFile,
             ]);
 

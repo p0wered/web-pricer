@@ -1,74 +1,65 @@
-version: '3'
 services:
     app:
-        build:
-            context: .
-            dockerfile: Dockerfile
-        image: radio-db/app
+        build: .
         container_name: webpricer-app
         restart: unless-stopped
-        tty: true
-        environment:
-            SERVICE_NAME: app
-            SERVICE_TAGS: dev
         working_dir: /var/www
         volumes:
-            - ./:/var/www
-            - ./docker/php/local.ini:/usr/local/etc/php/conf.d/local.ini
+            - .:/var/www:delegated
         networks:
-            - webpricer-network
+            - laravel
+        depends_on:
+            - db
 
     nginx:
-        image: nginx:alpine
+        image: nginx:latest
         container_name: webpricer-nginx
         restart: unless-stopped
-        tty: true
         ports:
             - "80:80"
-            - "443:443"
         volumes:
-            - ./:/var/www
-            - ./docker/nginx/conf.d/:/etc/nginx/conf.d/
-            - ./docker/nginx/ssl/:/etc/nginx/ssl/
+            - .:/var/www:delegated
+            - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
         networks:
-            - webpricer-network
+            - laravel
+        depends_on:
+            - app
 
     db:
-        image: mysql:8.0
-        container_name: webpricer-db
+        image: mysql:8.4
+        container_name: webpricer_db
         restart: unless-stopped
-        tty: true
-        ports:
-            - "3306:3306"
         environment:
             MYSQL_DATABASE: radio_db
-            MYSQL_ROOT_PASSWORD: secret
-            SERVICE_TAGS: dev
-            SERVICE_NAME: mysql
+            MYSQL_ROOT_PASSWORD: root
+            MYSQL_USER: webpricer_admin
+            MYSQL_PASSWORD: test123
         volumes:
-            - dbdata:/var/lib/mysql/
-            - ./docker/mysql/my.cnf:/etc/mysql/my.cnf
+            - mysql_data:/var/lib/mysql
         networks:
-            - webpricer-network
+            - laravel
+        deploy:
+            resources:
+                limits:
+                    cpus: '6'
+                    memory: 8G
 
-    node:
-        image: node:20
-        container_name: webpricer-node
+    scheduler:
+        build: .
+        container_name: laravel_scheduler
         restart: unless-stopped
-        tty: true
         working_dir: /var/www
         volumes:
-            - ./:/var/www
-        ports:
-            - "5173:5173"
-        command: sh -c "npm install && npm run dev"
+            - .:/var/www:delegated
+        command: ["php", "artisan", "schedule:work"]
+        depends_on:
+            - app
+            - db
         networks:
-            - webpricer-network
+            - laravel
 
 networks:
-    webpricer-network:
-        driver: bridge
+    laravel:
 
 volumes:
-    dbdata:
-        driver: local
+    mysql_data:
