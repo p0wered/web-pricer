@@ -12,11 +12,11 @@ $frequency = env('EXCEL_IMPORT_FREQUENCY');
 $day = env('EXCEL_IMPORT_DAY');
 $time  = env('EXCEL_IMPORT_TIME');
 
-if ($frequency = 'weekly') {
-    Schedule::command('import:excel')->weeklyOn($day, $time)->withoutOverlapping();
-} else if ($frequency = 'daily') {
+if ($frequency == 'weekly') {
+    Schedule::command('import:excel')->weeklyOn((int) $day, $time)->withoutOverlapping();
+} else if ($frequency == 'daily') {
     Schedule::command('import:excel')->dailyAt($time)->withoutOverlapping();
-} else if ($frequency = 'monthly') {
-    Schedule::command('import:excel')->monthlyOn($day, $time)->withoutOverlapping();
+} else if ($frequency == 'monthly') {
+    Schedule::command('import:excel')->monthlyOn((int) $day, $time)->withoutOverlapping();
 }
 

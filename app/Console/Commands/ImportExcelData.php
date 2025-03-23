@@ -17,9 +17,9 @@ class ImportExcelData extends Command
 
     public function handle()
     {
-        $url = env('EXCEL_IMPORT_URL', 'https://cloud.gate12a.com/remote.php/dav/files/pricer/Pricer.xlsm');
-        $username = env('EXCEL_IMPORT_USERNAME', 'pricer');
-        $password = env('EXCEL_IMPORT_PASSWORD', '25d03m2004Y');
+        $url = env('EXCEL_IMPORT_URL');
+        $username = env('EXCEL_IMPORT_USERNAME');
+        $password = env('EXCEL_IMPORT_PASSWORD');
 
         $this->info("Скачивание файла...");
 

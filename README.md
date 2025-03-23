@@ -20,16 +20,16 @@ EXCEL_IMPORT_FREQUENCY=daily/weekly/montly
 EXCEL_IMPORT_DAY=1/2/3...
 ```
 
-Для смены времени, в которое будет происходить импорт отредактируйте следующую строку:
+Для смены времени, в которое будет происходить импорт, отредактируйте следующую строку:
 ```env
 EXCEL_IMPORT_TIME=18:00/7:00/...
 ```
 
 Данные для авторизации необходимо указать в следующих строках:
 ```env
-EXCEL_IMPORT_URL=
-EXCEL_IMPORT_USERNAME=
-EXCEL_IMPORT_PASSWORD=
+EXCEL_IMPORT_URL=https://yourserver.com/.../yourfile.xlsm (обязательно https)
+EXCEL_IMPORT_USERNAME=username
+EXCEL_IMPORT_PASSWORD=password
 ```
 
 ### 2. Развёртывание сервиса и создание контейнеров
@@ -43,9 +43,6 @@ docker-compose up -d --build
 
 После успешного завершения развёртывания откройте терминал в контейнере **webpricer-app** через Docker Desktop и выполните следующие команды:
 
-```console
-composer install
-```
 ```console
 php artisan key:generate
 ```
