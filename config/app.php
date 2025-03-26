@@ -14,20 +14,6 @@ return [
 
     'url' => env('APP_URL', 'http://localhost'),
 
-
-    'excel_import_frequency' => env('EXCEL_IMPORT_FREQUENCY'),
-
-    'excel_import_day' => env('EXCEL_IMPORT_DAY'),
-
-    'excel_import_time' => env('EXCEL_IMPORT_TIME'),
-
-    'excel_import_url' => env('EXCEL_IMPORT_URL'),
-
-    'excel_import_username' => env('EXCEL_IMPORT_USERNAME'),
-
-    'excel_import_password' => env('EXCEL_IMPORT_PASSWORD'),
-
-
     'timezone' => 'Etc/GMT+3',
 
     'locale' => env('APP_LOCALE', 'en'),
