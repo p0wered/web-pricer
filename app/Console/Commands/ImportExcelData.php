@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\ImportSetting;
 use App\Models\MainProduct;
 use App\Models\SpecialProduct;
 use Illuminate\Console\Command;
@@ -17,9 +18,15 @@ class ImportExcelData extends Command
 
     public function handle()
     {
-        $url = env('EXCEL_IMPORT_URL');
-        $username = env('EXCEL_IMPORT_USERNAME');
-        $password = env('EXCEL_IMPORT_PASSWORD');
+        $settings = ImportSetting::first();
+        if (!$settings) {
+            $this->error('Настройки импорта не найдены в базе данных.');
+            return;
+        }
+
+        $url = $settings->excel_import_url;
+        $username = $settings->excel_import_username;
+        $password = $settings->excel_import_password;
 
         $this->info("Скачивание файла...");
 

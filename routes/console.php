@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\ImportSetting;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
@@ -8,15 +9,18 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
-$frequency = env('EXCEL_IMPORT_FREQUENCY');
-$day = env('EXCEL_IMPORT_DAY');
-$time  = env('EXCEL_IMPORT_TIME');
+$settings = ImportSetting::first();
 
-if ($frequency == 'weekly') {
-    Schedule::command('import:excel')->weeklyOn((int) $day, $time)->withoutOverlapping();
-} else if ($frequency == 'daily') {
-    Schedule::command('import:excel')->dailyAt($time)->withoutOverlapping();
-} else if ($frequency == 'monthly') {
-    Schedule::command('import:excel')->monthlyOn((int) $day, $time)->withoutOverlapping();
+if ($settings) {
+    $frequency = $settings->excel_import_frequency;
+    $day = $settings->excel_import_day;
+    $time = $settings->excel_import_time;
+
+    if ($frequency == 'weekly') {
+        Schedule::command('import:excel')->weeklyOn((int) $day, $time)->withoutOverlapping();
+    } else if ($frequency == 'daily') {
+        Schedule::command('import:excel')->dailyAt($time)->withoutOverlapping();
+    } else if ($frequency == 'monthly') {
+        Schedule::command('import:excel')->monthlyOn((int) $day, $time)->withoutOverlapping();
+    }
 }
-

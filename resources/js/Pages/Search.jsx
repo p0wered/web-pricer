@@ -16,7 +16,9 @@ export default function Index({ auth, mainProducts, specialProducts, search, all
     const [localSpecialProducts, setLocalSpecialProducts] = useState(specialProducts);
     const [specialSortOrder, setSpecialSortOrder] = useState(null);
 
-    const hasFullData = allData && allData.mainProductsAll && allData.specialProductsAll;
+    const hasFullData = allData &&
+        Array.isArray(allData.mainProductsAll) && allData.mainProductsAll.length > 0 &&
+        Array.isArray(allData.specialProductsAll) && allData.specialProductsAll.length > 0;
 
     const sortByPrice = (data, sortOrder) => {
         if (!sortOrder) return data;
@@ -146,6 +148,9 @@ export default function Index({ auth, mainProducts, specialProducts, search, all
             only: ['mainProducts', 'specialProducts', 'search', 'allData'],
             onFinish: () => setIsLoading(false)
         });
+        console.log("allData:", allData);
+        console.log("mainProducts:", mainProducts);
+        console.log("specialProducts:", specialProducts);
     };
 
     const handlePaste = async () => {
@@ -187,15 +192,26 @@ export default function Index({ auth, mainProducts, specialProducts, search, all
                     <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-4 mb-4">
                         <div className="flex justify-between items-start">
                             <h1 className="text-2xl font-bold mb-3">Поиск деталей</h1>
-                            <Link
-                                href={route('logout')}
-                                method="post"
-                                as="button"
-                                className="text-gray-700 underline"
-                                style={{fontSize: 16}}
-                            >
-                                Выйти
-                            </Link>
+                            <div className='flex gap-3'>
+                                <Link
+                                    href={route('settings')}
+                                    method="get"
+                                    as="button"
+                                    className="text-gray-700 underline"
+                                    style={{fontSize: 16}}
+                                >
+                                    Настройки
+                                </Link>
+                                <Link
+                                    href={route('logout')}
+                                    method="post"
+                                    as="button"
+                                    className="text-gray-700 underline"
+                                    style={{fontSize: 16}}
+                                >
+                                    Выйти
+                                </Link>
+                            </div>
                         </div>
                         <form onSubmit={handleSubmit}>
                             <div className="flex items-center gap-2">
