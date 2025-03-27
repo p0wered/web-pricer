@@ -8,19 +8,22 @@ export default function Index({ auth, mainProducts, specialProducts, search, all
     const [isLoading, setIsLoading] = useState(false);
     const inputRef = useRef(null);
 
-    const [localMainPage, setLocalMainPage] = useState(mainProducts?.current_page || 1);
-    const [localMainProducts, setLocalMainProducts] = useState(mainProducts);
+    const [localMainPage, setLocalMainPage] = useState(1);
+    const [localMainProducts, setLocalMainProducts] = useState(() =>
+        mainProducts?.data?.length ? mainProducts : { data: [], links: [] }
+    );
     const [mainSortOrder, setMainSortOrder] = useState(null);
 
-    const [localSpecialPage, setLocalSpecialPage] = useState(specialProducts?.current_page || 1);
-    const [localSpecialProducts, setLocalSpecialProducts] = useState(specialProducts);
+    const [localSpecialPage, setLocalSpecialPage] = useState(1);
+    const [localSpecialProducts, setLocalSpecialProducts] = useState(() =>
+        specialProducts?.data?.length ? specialProducts : { data: [], links: [] }
+    );
     const [specialSortOrder, setSpecialSortOrder] = useState(null);
 
-    const hasFullData =
-        allData &&
-        Array.isArray(allData.mainProductsAll) &&
-        Array.isArray(allData.specialProductsAll) &&
-        (allData.mainProductsAll.length > 0 || allData.specialProductsAll.length > 0);
+    const hasFullData = allData && (
+        (allData.mainProductsAll?.length > 0) ||
+        (allData.specialProductsAll?.length > 0)
+    );
 
     const sortByPrice = (data, sortOrder) => {
         if (!sortOrder) return data;
@@ -38,50 +41,80 @@ export default function Index({ auth, mainProducts, specialProducts, search, all
     };
 
     useEffect(() => {
-        const perPage = 15;
+        const perPage = 15; // Количество элементов на страницу
 
-        if (!allData) {
-            setLocalMainProducts(mainProducts);
-            setLocalSpecialProducts(specialProducts);
-            return;
+        if (hasFullData) {
+            // Обработка основных товаров
+            const sortedMain = sortByPrice(allData.mainProductsAll || [], mainSortOrder);
+            const mainTotalItems = sortedMain.length;
+            const mainLastPage = Math.ceil(mainTotalItems / perPage) || 1;
+            const currentMainPage = Math.min(localMainPage, mainLastPage);
+
+            // Вычисление элементов для текущей страницы
+            const mainStartIndex = (currentMainPage - 1) * perPage;
+            const mainPaginatedData = sortedMain.slice(
+                mainStartIndex,
+                mainStartIndex + perPage
+            );
+
+            // Обновление состояния основных товаров
+            setLocalMainProducts({
+                data: mainPaginatedData,
+                current_page: currentMainPage,
+                last_page: mainLastPage,
+                links: generatePaginationLinks(currentMainPage, mainLastPage)
+            });
+
+            // Аналогичная обработка для специальных товаров
+            const sortedSpecial = sortByPrice(allData.specialProductsAll || [], specialSortOrder);
+            const specialTotalItems = sortedSpecial.length;
+            const specialLastPage = Math.ceil(specialTotalItems / perPage) || 1;
+            const currentSpecialPage = Math.min(localSpecialPage, specialLastPage);
+
+            const specialStartIndex = (currentSpecialPage - 1) * perPage;
+            const specialPaginatedData = sortedSpecial.slice(
+                specialStartIndex,
+                specialStartIndex + perPage
+            );
+
+            setLocalSpecialProducts({
+                data: specialPaginatedData,
+                current_page: currentSpecialPage,
+                last_page: specialLastPage,
+                links: generatePaginationLinks(currentSpecialPage, specialLastPage)
+            });
+
+        } else {
+            // Если нет полных данных (первый запрос или сброс)
+            const mainData = mainProducts?.data?.length
+                ? mainProducts
+                : { data: [], links: [], current_page: 1, last_page: 1 };
+
+            const specialData = specialProducts?.data?.length
+                ? specialProducts
+                : { data: [], links: [], current_page: 1, last_page: 1 };
+
+            setLocalMainProducts(prev => ({
+                ...prev,
+                ...mainData,
+                links: mainData.links || generatePaginationLinks(1, 1)
+            }));
+
+            setLocalSpecialProducts(prev => ({
+                ...prev,
+                ...specialData,
+                links: specialData.links || generatePaginationLinks(1, 1)
+            }));
         }
-
-        const sortedMainProducts = sortByPrice(allData.mainProductsAll, mainSortOrder);
-        const lastMainPage = Math.ceil(sortedMainProducts.length / perPage);
-        if (localMainPage > lastMainPage) {
-            setLocalMainPage(lastMainPage);
-            return;
-        }
-        const mainStart = (localMainPage - 1) * perPage;
-        const mainCurrentItems = sortedMainProducts.slice(mainStart, mainStart + perPage);
-
-        const mainPaginator = {
-            data: mainCurrentItems,
-            current_page: localMainPage,
-            last_page: lastMainPage,
-            links: generatePaginationLinks(localMainPage, lastMainPage)
-        };
-
-        setLocalMainProducts(mainPaginator);
-
-        const sortedSpecialProducts = sortByPrice(allData.specialProductsAll, specialSortOrder);
-        const lastSpecialPage = Math.ceil(sortedSpecialProducts.length / perPage);
-        if (localSpecialPage > lastSpecialPage) {
-            setLocalSpecialPage(lastSpecialPage);
-            return;
-        }
-        const specialStart = (localSpecialPage - 1) * perPage;
-        const specialCurrentItems = sortedSpecialProducts.slice(specialStart, specialStart + perPage);
-
-        const specialPaginator = {
-            data: specialCurrentItems,
-            current_page: localSpecialPage,
-            last_page: lastSpecialPage,
-            links: generatePaginationLinks(localSpecialPage, lastSpecialPage)
-        };
-
-        setLocalSpecialProducts(specialPaginator);
-    }, [localMainPage, localSpecialPage, mainSortOrder, specialSortOrder, allData, mainProducts, specialProducts]);
+    }, [
+        allData,
+        mainSortOrder,
+        specialSortOrder,
+        localMainPage,
+        localSpecialPage,
+        mainProducts,
+        specialProducts
+    ]);
 
     const generatePaginationLinks = (currentPage, lastPage) => {
         const links = [];
@@ -157,13 +190,22 @@ export default function Index({ auth, mainProducts, specialProducts, search, all
     const handleSubmit = (e) => {
         e.preventDefault();
         setIsLoading(true);
+
+        setLocalMainPage(1);
+        setLocalSpecialPage(1);
+        setMainSortOrder(null);
+        setSpecialSortOrder(null);
+
         router.get(route('search.index'), { search: searchInput }, {
             preserveState: true,
+            replace: true,
             only: ['mainProducts', 'specialProducts', 'search', 'allData'],
-            onFinish: () => setIsLoading(false)
+            onFinish: () => {
+                setIsLoading(false);
+                setLocalMainProducts(prev => ({ ...prev }));
+                setLocalSpecialProducts(prev => ({ ...prev }));
+            }
         });
-        console.log("allData:", allData);
-        console.log("hasFullData:", hasFullData);
     };
 
     const handlePaste = async () => {
@@ -305,21 +347,12 @@ export default function Index({ auth, mainProducts, specialProducts, search, all
                                             </tbody>
                                         </table>
                                     </div>
-                                    {hasFullData ? (
-                                        <Pagination
-                                            links={displaySpecialProducts.links}
-                                            currentPage={localSpecialPage}
-                                            lastPage={displaySpecialProducts.last_page}
-                                            onPageChange={handleSpecialPageChange}
-                                        />
-                                    ) : (
-                                        <Pagination
-                                            links={specialProducts.links}
-                                            currentPage={specialProducts.current_page}
-                                            lastPage={specialProducts.last_page}
-                                            onPageChange={handleSpecialPageChange}
-                                        />
-                                    )}
+                                    <Pagination
+                                        links={hasFullData ? displaySpecialProducts.links : specialProducts.links}
+                                        currentPage={hasFullData ? localSpecialPage : specialProducts.current_page}
+                                        lastPage={hasFullData ? displaySpecialProducts.last_page : specialProducts.last_page}
+                                        onPageChange={handleSpecialPageChange}
+                                    />
 
                                 </>
                             ) : (
@@ -388,22 +421,12 @@ export default function Index({ auth, mainProducts, specialProducts, search, all
                                             </tbody>
                                         </table>
                                     </div>
-                                    {hasFullData ? (
-                                        <Pagination
-                                            links={displayMainProducts.links}
-                                            currentPage={localMainPage}
-                                            lastPage={displayMainProducts.last_page}
-                                            onPageChange={handleMainPageChange}
-                                        />
-                                    ) : (
-                                        <Pagination
-                                            links={mainProducts.links}
-                                            currentPage={mainProducts.current_page}
-                                            lastPage={mainProducts.last_page}
-                                            onPageChange={handleMainPageChange}
-                                        />
-                                    )}
-
+                                    <Pagination
+                                        links={hasFullData ? displayMainProducts.links : mainProducts.links}
+                                        currentPage={hasFullData ? localMainPage : mainProducts.current_page}
+                                        lastPage={hasFullData ? displayMainProducts.last_page : mainProducts.last_page}
+                                        onPageChange={handleMainPageChange}
+                                    />
                                 </>
                             ) : (
                                 <p className="text-gray-500">Нет данных для отображения</p>
