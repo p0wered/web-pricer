@@ -22,3 +22,5 @@ php artisan import:excel
 Для смены пароля через Docker Desktop выполните данную команду:
 php artisan password:change
 
+Чтобы увидеть время следующего запланированного импорта, выполните следующую команду в контейнере **app**:
+php artisan schedule:list

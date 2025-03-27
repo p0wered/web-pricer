@@ -16,9 +16,11 @@ export default function Index({ auth, mainProducts, specialProducts, search, all
     const [localSpecialProducts, setLocalSpecialProducts] = useState(specialProducts);
     const [specialSortOrder, setSpecialSortOrder] = useState(null);
 
-    const hasFullData = allData &&
-        Array.isArray(allData.mainProductsAll) && allData.mainProductsAll.length > 0 &&
-        Array.isArray(allData.specialProductsAll) && allData.specialProductsAll.length > 0;
+    const hasFullData =
+        allData &&
+        Array.isArray(allData.mainProductsAll) &&
+        Array.isArray(allData.specialProductsAll) &&
+        (allData.mainProductsAll.length > 0 || allData.specialProductsAll.length > 0);
 
     const sortByPrice = (data, sortOrder) => {
         if (!sortOrder) return data;
@@ -36,38 +38,50 @@ export default function Index({ auth, mainProducts, specialProducts, search, all
     };
 
     useEffect(() => {
-        if (hasFullData) {
-            const perPage = 15;
+        const perPage = 15;
 
-            const sortedMainProducts = sortByPrice(allData.mainProductsAll, mainSortOrder);
-            const mainStart = (localMainPage - 1) * perPage;
-            const mainEnd = mainStart + perPage;
-            const mainCurrentItems = sortedMainProducts.slice(mainStart, mainEnd);
-
-            const mainPaginator = {
-                data: mainCurrentItems,
-                current_page: localMainPage,
-                last_page: Math.ceil(sortedMainProducts.length / perPage),
-                links: generatePaginationLinks(localMainPage, Math.ceil(sortedMainProducts.length / perPage))
-            };
-
-            setLocalMainProducts(mainPaginator);
-
-            const sortedSpecialProducts = sortByPrice(allData.specialProductsAll, specialSortOrder);
-            const specialStart = (localSpecialPage - 1) * perPage;
-            const specialEnd = specialStart + perPage;
-            const specialCurrentItems = sortedSpecialProducts.slice(specialStart, specialEnd);
-
-            const specialPaginator = {
-                data: specialCurrentItems,
-                current_page: localSpecialPage,
-                last_page: Math.ceil(sortedSpecialProducts.length / perPage),
-                links: generatePaginationLinks(localSpecialPage, Math.ceil(sortedSpecialProducts.length / perPage))
-            };
-
-            setLocalSpecialProducts(specialPaginator);
+        if (!allData) {
+            setLocalMainProducts(mainProducts);
+            setLocalSpecialProducts(specialProducts);
+            return;
         }
-    }, [localMainPage, localSpecialPage, mainSortOrder, specialSortOrder, hasFullData]);
+
+        const sortedMainProducts = sortByPrice(allData.mainProductsAll, mainSortOrder);
+        const lastMainPage = Math.ceil(sortedMainProducts.length / perPage);
+        if (localMainPage > lastMainPage) {
+            setLocalMainPage(lastMainPage);
+            return;
+        }
+        const mainStart = (localMainPage - 1) * perPage;
+        const mainCurrentItems = sortedMainProducts.slice(mainStart, mainStart + perPage);
+
+        const mainPaginator = {
+            data: mainCurrentItems,
+            current_page: localMainPage,
+            last_page: lastMainPage,
+            links: generatePaginationLinks(localMainPage, lastMainPage)
+        };
+
+        setLocalMainProducts(mainPaginator);
+
+        const sortedSpecialProducts = sortByPrice(allData.specialProductsAll, specialSortOrder);
+        const lastSpecialPage = Math.ceil(sortedSpecialProducts.length / perPage);
+        if (localSpecialPage > lastSpecialPage) {
+            setLocalSpecialPage(lastSpecialPage);
+            return;
+        }
+        const specialStart = (localSpecialPage - 1) * perPage;
+        const specialCurrentItems = sortedSpecialProducts.slice(specialStart, specialStart + perPage);
+
+        const specialPaginator = {
+            data: specialCurrentItems,
+            current_page: localSpecialPage,
+            last_page: lastSpecialPage,
+            links: generatePaginationLinks(localSpecialPage, lastSpecialPage)
+        };
+
+        setLocalSpecialProducts(specialPaginator);
+    }, [localMainPage, localSpecialPage, mainSortOrder, specialSortOrder, allData, mainProducts, specialProducts]);
 
     const generatePaginationLinks = (currentPage, lastPage) => {
         const links = [];
@@ -133,8 +147,8 @@ export default function Index({ auth, mainProducts, specialProducts, search, all
         }
     }, []);
 
-    const displayMainProducts = hasFullData ? localMainProducts : mainProducts;
-    const displaySpecialProducts = hasFullData ? localSpecialProducts : specialProducts;
+    const displayMainProducts = localMainProducts;
+    const displaySpecialProducts = localSpecialProducts;
 
     const handleSearchChange = (e) => {
         setSearchInput(e.target.value);
@@ -149,8 +163,7 @@ export default function Index({ auth, mainProducts, specialProducts, search, all
             onFinish: () => setIsLoading(false)
         });
         console.log("allData:", allData);
-        console.log("mainProducts:", mainProducts);
-        console.log("specialProducts:", specialProducts);
+        console.log("hasFullData:", hasFullData);
     };
 
     const handlePaste = async () => {
