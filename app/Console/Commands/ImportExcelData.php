@@ -18,6 +18,8 @@ class ImportExcelData extends Command
 
     public function handle()
     {
+        set_time_limit(0);
+
         $settings = ImportSetting::first();
         if (!$settings) {
             $this->error('Настройки импорта не найдены в базе данных.');

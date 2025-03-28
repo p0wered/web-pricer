@@ -23,11 +23,11 @@ try {
             $time = $settings->excel_import_time;
 
             if ($frequency == 'weekly') {
-                Schedule::command('import:excel')->weeklyOn((int) $day, $time)->withoutOverlapping();
+                Schedule::command('import:excel')->weeklyOn((int) $day, $time);
             } else if ($frequency == 'daily') {
-                Schedule::command('import:excel')->dailyAt($time)->withoutOverlapping();
+                Schedule::command('import:excel')->dailyAt($time);
             } else if ($frequency == 'monthly') {
-                Schedule::command('import:excel')->monthlyOn((int) $day, $time)->withoutOverlapping();
+                Schedule::command('import:excel')->monthlyOn((int) $day, $time);
             }
         }
     }
