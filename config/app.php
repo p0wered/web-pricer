@@ -14,7 +14,7 @@ return [
 
     'url' => env('APP_URL', 'http://localhost'),
 
-    'timezone' => 'Etc/GMT+3',
+    'timezone' => 'Europe/Moscow',
 
     'locale' => env('APP_LOCALE', 'en'),
 
