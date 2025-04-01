@@ -50,67 +50,54 @@ class SearchController extends Controller
             return redirect()->route('search.index');
         }
 
-        $cacheKey = "search_results_{$search}";
-
+        $cacheKey = "search_results_" . md5($search);
         $cachedResults = Cache::get($cacheKey);
 
         if (!$cachedResults) {
             $normalizedSearch = preg_replace('/\s+/', ' ', trim($search));
-            $unifiedSearch = $this->unifyString($normalizedSearch);
+            $tokens = explode(' ', $normalizedSearch);
+            $baseToken = array_shift($tokens);
+            $baseTokenUnified = strtolower($this->unifyString($baseToken));
 
             $mainProducts = MainProduct::query();
             $specialProducts = SpecialProduct::query();
 
-            $applySearchConditions = function($query) use ($normalizedSearch, $unifiedSearch) {
-                $unifiedSearchLower = strtolower($unifiedSearch);
-
-                $query->where(function($q) use ($unifiedSearchLower) {
-                    $q->where('normalized_name', '=', $unifiedSearchLower);
-                    $q->orWhere('normalized_name', 'LIKE', "%{$unifiedSearchLower}%");
+            $applyBaseCondition = function ($query) use ($baseTokenUnified) {
+                $query->where(function ($q) use ($baseTokenUnified) {
+                    $q->where('normalized_name', '=', $baseTokenUnified)
+                        ->orWhere('normalized_name', 'LIKE', "{$baseTokenUnified}%");
                 });
-
                 return $query;
             };
 
-            $mainProducts = $applySearchConditions($mainProducts);
-            $specialProducts = $applySearchConditions($specialProducts);
+            $mainProducts = $applyBaseCondition($mainProducts);
+            $specialProducts = $applyBaseCondition($specialProducts);
 
-            $orderByRelevance = function($query) use ($normalizedSearch, $unifiedSearch) {
-                $normalizedSearchLower = strtolower($normalizedSearch);
-                $unifiedSearchLower = strtolower($unifiedSearch);
+            if (!empty($tokens)) {
+                $applyAdditionalConditions = function ($query) use ($tokens) {
+                    foreach ($tokens as $token) {
+                        $tokenUnified = strtolower($this->unifyString($token));
+                        $query->where('normalized_name', 'LIKE', "%{$tokenUnified}%");
+                    }
+                    return $query;
+                };
 
+                $mainProducts = $applyAdditionalConditions($mainProducts);
+                $specialProducts = $applyAdditionalConditions($specialProducts);
+            }
+
+            $orderByRelevance = function ($query) use ($baseTokenUnified, $tokens) {
                 $relevanceScore = '(';
-                $relevanceScore .= "CASE WHEN LOWER(name) = ? THEN 1000 ELSE 0 END + ";
-                $relevanceScore .= "CASE WHEN LOWER(REPLACE(REPLACE(REPLACE(REPLACE(name, '-', ''), ' ', ''), ',', ''), '.', '')) = ? THEN 900 ELSE 0 END + ";
-                $relevanceScore .= "CASE WHEN LOWER(name) LIKE ? THEN 800 ELSE 0 END + ";
-                $relevanceScore .= "CASE WHEN LOWER(REPLACE(REPLACE(REPLACE(REPLACE(name, '-', ''), ' ', ''), ',', ''), '.', '')) LIKE ? THEN 700 ELSE 0 END + ";
-                $relevanceScore .= "CASE WHEN LOWER(name) LIKE ? THEN 600 ELSE 0 END + ";
-                $relevanceScore .= "CASE WHEN LOWER(REPLACE(REPLACE(REPLACE(REPLACE(name, '-', ''), ' ', ''), ',', ''), '.', '')) LIKE ? THEN 500 ELSE 0 END";
+                $relevanceScore .= "CASE WHEN LOWER(name) LIKE ? THEN 1000 ELSE 0 END";
 
-                $tokens = preg_split('/[\s\-,\.]+/', $normalizedSearch);
+                $params = [ $baseTokenUnified . '%' ];
+
                 foreach ($tokens as $index => $token) {
-                    if (strlen($token) >= 2) {
-                        $score = 400 - ($index * 10);
-                        $relevanceScore .= " + CASE WHEN LOWER(name) LIKE ? THEN {$score} ELSE 0 END";
-                    }
+                    $score = 500 - ($index * 50);
+                    $relevanceScore .= " + CASE WHEN LOWER(name) LIKE ? THEN {$score} ELSE 0 END";
+                    $params[] = "%" . strtolower($token) . "%";
                 }
-
                 $relevanceScore .= ")";
-
-                $params = [
-                    $normalizedSearchLower,
-                    $unifiedSearchLower,
-                    $normalizedSearchLower . "%",
-                    $unifiedSearchLower . "%",
-                    "%" . $normalizedSearchLower . "%",
-                    "%" . $unifiedSearchLower . "%"
-                ];
-
-                foreach ($tokens as $token) {
-                    if (strlen($token) >= 2) {
-                        $params[] = "%" . strtolower($token) . "%";
-                    }
-                }
 
                 $query->orderByRaw("{$relevanceScore} DESC", $params)
                     ->orderBy('name', 'ASC');
@@ -126,7 +113,7 @@ class SearchController extends Controller
 
             $cachedResults = [
                 'mainProductsAll' => $mainProductsAll,
-                'specialProductsAll' => $specialProductsAll
+                'specialProductsAll' => $specialProductsAll,
             ];
 
             Cache::put($cacheKey, $cachedResults, now()->addMinutes(15));

@@ -246,7 +246,7 @@ export default function Index({ auth, mainProducts, specialProducts, search, all
                 <div className="mx-auto sm:px-6 lg:px-4 ">
                     <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-4 mb-4">
                         <div className="flex justify-between items-start">
-                            <h1 className="text-2xl font-bold mb-3">Поиск деталей</h1>
+                            <h1 className="text-xl font-bold mb-3">Поиск деталей</h1>
                             <div className='flex gap-3'>
                                 <Link
                                     href={route('settings')}
@@ -318,17 +318,17 @@ export default function Index({ auth, mainProducts, specialProducts, search, all
                                         <table className="min-w-full divide-y divide-gray-200">
                                             <thead className="bg-gray-50">
                                             <tr>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Название</th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Год</th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Кол-во</th>
+                                                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Название</th>
+                                                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Год</th>
+                                                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Кол-во</th>
                                                 <th
-                                                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                                                    className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
                                                     onClick={handleSpecialSortChange}
                                                 >
                                                     Цена <SortIndicator sortOrder={specialSortOrder} />
                                                 </th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Поставщик</th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Описание</th>
+                                                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Поставщик</th>
+                                                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Описание</th>
                                             </tr>
                                             </thead>
                                             <tbody className="bg-white divide-y divide-gray-200">
@@ -336,12 +336,12 @@ export default function Index({ auth, mainProducts, specialProducts, search, all
                                                 <tr key={product.id}
                                                     className={`${getSupplierColor(product.sheet_name)} hover:bg-opacity-50`}
                                                 >
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{product.name}</td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{product.code}</td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{product.quantity}</td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{product.price}</td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{product.sheet_name}</td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{product.description}</td>
+                                                    <td className="px-3 py-3 whitespace-nowrap text-xs text-gray-900">{product.name}</td>
+                                                    <td className="px-3 py-3 whitespace-nowrap text-xs text-gray-500">{product.code}</td>
+                                                    <td className="px-3 py-3 whitespace-nowrap text-xs text-gray-500">{product.quantity}</td>
+                                                    <td className="px-3 py-3 whitespace-nowrap text-xs text-gray-500">{product.price}</td>
+                                                    <td className="px-3 py-3 whitespace-nowrap text-xs text-gray-500">{product.sheet_name}</td>
+                                                    <td className="px-3 py-3 whitespace-nowrap text-xs text-gray-500">{product.description}</td>
                                                 </tr>
                                             ))}
                                             </tbody>
@@ -369,25 +369,25 @@ export default function Index({ auth, mainProducts, specialProducts, search, all
                                         <table className="min-w-full divide-y divide-gray-200">
                                             <thead className="bg-gray-50">
                                             <tr>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                                                     Название
                                                 </th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                                                     Год
                                                 </th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                                                     Количество
                                                 </th>
                                                 <th
-                                                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer"
+                                                    className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer"
                                                     onClick={handleMainSortChange}
                                                 >
                                                     Цена <SortIndicator sortOrder={mainSortOrder} />
                                                 </th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                                                     Поставщик
                                                 </th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                                                     Описание
                                                 </th>
                                             </tr>
@@ -398,22 +398,22 @@ export default function Index({ auth, mainProducts, specialProducts, search, all
                                                     key={product.id}
                                                     className={`${getSupplierColor(product.sheet_name)} hover:bg-opacity-50`}
                                                 >
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                    <td className="px-3 py-3 whitespace-nowrap text-xs text-gray-900">
                                                         {product.name}
                                                     </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    <td className="px-3 py-3 whitespace-nowrap text-xs text-gray-500">
                                                         {product.code}
                                                     </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    <td className="px-3 py-3 whitespace-nowrap text-xs text-gray-500">
                                                         {product.quantity}
                                                     </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    <td className="px-3 py-3 whitespace-nowrap text-xs text-gray-500">
                                                         {product.price}
                                                     </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    <td className="px-3 py-3 whitespace-nowrap text-xs text-gray-500">
                                                         {product.sheet_name}
                                                     </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    <td className="px-3 py-3 whitespace-nowrap text-xs text-gray-500">
                                                         {product.description}
                                                     </td>
                                                 </tr>
