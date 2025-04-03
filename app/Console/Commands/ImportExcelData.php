@@ -104,6 +104,7 @@ class ImportExcelData extends Command
 
                     $originalName = mb_convert_encoding(substr($row[0] ?? '', 0, 255), 'UTF-8', 'auto');
                     $normalizedName = preg_replace('/[\s\-]+/', '', strtolower($originalName));
+                    $normalizedName = str_replace(',', '.', $normalizedName);
 
                     $product = [
                         'name' => $originalName,

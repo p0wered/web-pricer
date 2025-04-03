@@ -152,6 +152,8 @@ class SearchController extends Controller
 
     private function unifyString($string)
     {
+        $string = strtolower($string);
+        $string = str_replace(',', '.', $string);
         return preg_replace('/[\s\-]+/', '', $string);
     }
 }

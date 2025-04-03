@@ -19,6 +19,10 @@ export default function Index({ auth, mainProducts, specialProducts, search, all
         specialProducts?.data?.length ? specialProducts : { data: [], links: [] }
     );
     const [specialSortOrder, setSpecialSortOrder] = useState(null);
+    const [convertLayout, setConvertLayout] = useState(() => {
+        const saved = localStorage.getItem('convertLayout');
+        return saved === 'true';
+    });
 
     const hasFullData = allData && (
         (allData.mainProductsAll?.length > 0) ||
@@ -37,6 +41,30 @@ export default function Index({ auth, mainProducts, specialProducts, search, all
             if (priceB === null) return -1;
 
             return sortOrder === "asc" ? priceA - priceB : priceB - priceA;
+        });
+    };
+
+    const convertEngToRus = (text) => {
+        const engToRusMap = {
+            'q': 'й', 'w': 'ц', 'e': 'у', 'r': 'к', 't': 'е', 'y': 'н', 'u': 'г', 'i': 'ш', 'o': 'щ', 'p': 'з', '[': 'х', ']': 'ъ',
+            'a': 'ф', 's': 'ы', 'd': 'в', 'f': 'а', 'g': 'п', 'h': 'р', 'j': 'о', 'k': 'л', 'l': 'д', ';': 'ж', '\'': 'э',
+            'z': 'я', 'x': 'ч', 'c': 'с', 'v': 'м', 'b': 'и', 'n': 'т', 'm': 'ь', ',': 'б', '.': 'ю'
+        };
+
+        return text.split('').map(char => {
+            const lowerChar = char.toLowerCase();
+            const converted = engToRusMap[lowerChar] || char;
+            return char === lowerChar ? converted : converted.toUpperCase();
+        }).join('');
+    };
+
+    const groupSpecialProducts = (data) => {
+        const priorityOrder = ["STOP", "RK", "PI"];
+
+        return [...data].sort((a, b) => {
+            const indexA = priorityOrder.includes(a.sheet_name) ? priorityOrder.indexOf(a.sheet_name) : priorityOrder.length;
+            const indexB = priorityOrder.includes(b.sheet_name) ? priorityOrder.indexOf(b.sheet_name) : priorityOrder.length;
+            return indexA - indexB;
         });
     };
 
@@ -63,12 +91,13 @@ export default function Index({ auth, mainProducts, specialProducts, search, all
             });
 
             const sortedSpecial = sortByPrice(allData.specialProductsAll || [], specialSortOrder);
-            const specialTotalItems = sortedSpecial.length;
+            const groupedSpecial = groupSpecialProducts(sortedSpecial);
+            const specialTotalItems = groupedSpecial.length;
             const specialLastPage = Math.ceil(specialTotalItems / perPage) || 1;
             const currentSpecialPage = Math.min(localSpecialPage, specialLastPage);
 
             const specialStartIndex = (currentSpecialPage - 1) * perPage;
-            const specialPaginatedData = sortedSpecial.slice(
+            const specialPaginatedData = groupedSpecial.slice(
                 specialStartIndex,
                 specialStartIndex + perPage
             );
@@ -160,7 +189,15 @@ export default function Index({ auth, mainProducts, specialProducts, search, all
     const displaySpecialProducts = localSpecialProducts;
 
     const handleSearchChange = (e) => {
-        setSearchInput(e.target.value);
+        const newValue = e.target.value;
+
+        if (convertLayout && newValue.length > searchInput.length) {
+            const addedPart = newValue.slice(searchInput.length);
+            const convertedPart = convertEngToRus(addedPart);
+            setSearchInput(searchInput + convertedPart);
+        } else {
+            setSearchInput(newValue);
+        }
     };
 
     const handleSubmit = (e) => {
@@ -215,6 +252,14 @@ export default function Index({ auth, mainProducts, specialProducts, search, all
         return sortOrder === "asc" ? <span className="ml-1">↑</span> : <span className="ml-1">↓</span>;
     };
 
+    const toggleConvertLayout = () => {
+        setConvertLayout(prev => {
+            const newValue = !prev;
+            localStorage.setItem('convertLayout', newValue);
+            return newValue;
+        });
+    };
+
     return (
         <Layout auth={auth}>
             <Head title="Поиск деталей" />
@@ -255,6 +300,13 @@ export default function Index({ auth, mainProducts, specialProducts, search, all
                                     onChange={handleSearchChange}
                                     placeholder="Введите запрос..."
                                 />
+                                <button
+                                    type="button"
+                                    onClick={toggleConvertLayout}
+                                    className={`px-4 py-2 rounded-md transition-colors ${convertLayout ? 'bg-blue-600 text-white' : 'bg-gray-200 text-black'}`}
+                                >
+                                    EN→РУ
+                                </button>
                                 <button
                                     type="button"
                                     className="px-4 py-2 bg-gray-200 text-black rounded-md hover:bg-gray-300 transition-colors"
