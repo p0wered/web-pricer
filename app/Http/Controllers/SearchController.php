@@ -111,6 +111,7 @@ class SearchController extends Controller
             $mainProductsAll = $mainProducts->get(['id', 'name', 'code', 'quantity', 'price', 'sheet_name', 'description']);
             $specialProductsAll = $specialProducts->get(['id', 'name', 'code', 'quantity', 'price', 'sheet_name', 'description']);
 
+
             $cachedResults = [
                 'mainProductsAll' => $mainProductsAll,
                 'specialProductsAll' => $specialProductsAll,
@@ -151,6 +152,6 @@ class SearchController extends Controller
 
     private function unifyString($string)
     {
-        return preg_replace('/[\s\-\.,]+/', '', $string);
+        return preg_replace('/[\s\-]+/', '', $string);
     }
 }

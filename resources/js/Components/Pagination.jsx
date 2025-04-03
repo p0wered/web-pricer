@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 
 export default function Pagination({ links, currentPage, lastPage, onPageChange }) {
-    const visiblePages = 3;
+    const visiblePages = 2;
     const [inputPage, setInputPage] = useState(currentPage);
 
     const generatePageNumbers = () => {
@@ -43,7 +43,7 @@ export default function Pagination({ links, currentPage, lastPage, onPageChange 
     };
 
     return (
-        <div className="flex items-center justify-center mt-4 space-x-2">
+        <div className="flex items-center justify-between mt-4 space-x-2">
             <button
                 onClick={() => onPageChange(currentPage - 1)}
                 disabled={currentPage === 1}

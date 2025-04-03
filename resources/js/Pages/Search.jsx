@@ -41,23 +41,20 @@ export default function Index({ auth, mainProducts, specialProducts, search, all
     };
 
     useEffect(() => {
-        const perPage = 15; // Количество элементов на страницу
+        const perPage = 15;
 
         if (hasFullData) {
-            // Обработка основных товаров
             const sortedMain = sortByPrice(allData.mainProductsAll || [], mainSortOrder);
             const mainTotalItems = sortedMain.length;
             const mainLastPage = Math.ceil(mainTotalItems / perPage) || 1;
             const currentMainPage = Math.min(localMainPage, mainLastPage);
 
-            // Вычисление элементов для текущей страницы
             const mainStartIndex = (currentMainPage - 1) * perPage;
             const mainPaginatedData = sortedMain.slice(
                 mainStartIndex,
                 mainStartIndex + perPage
             );
 
-            // Обновление состояния основных товаров
             setLocalMainProducts({
                 data: mainPaginatedData,
                 current_page: currentMainPage,
@@ -65,7 +62,6 @@ export default function Index({ auth, mainProducts, specialProducts, search, all
                 links: generatePaginationLinks(currentMainPage, mainLastPage)
             });
 
-            // Аналогичная обработка для специальных товаров
             const sortedSpecial = sortByPrice(allData.specialProductsAll || [], specialSortOrder);
             const specialTotalItems = sortedSpecial.length;
             const specialLastPage = Math.ceil(specialTotalItems / perPage) || 1;
@@ -85,7 +81,6 @@ export default function Index({ auth, mainProducts, specialProducts, search, all
             });
 
         } else {
-            // Если нет полных данных (первый запрос или сброс)
             const mainData = mainProducts?.data?.length
                 ? mainProducts
                 : { data: [], links: [], current_page: 1, last_page: 1 };
@@ -160,25 +155,6 @@ export default function Index({ auth, mainProducts, specialProducts, search, all
         }
         setLocalMainPage(1);
     };
-
-    const handleSpecialSortChange = () => {
-        if (specialSortOrder === null) {
-            setSpecialSortOrder("asc");
-        } else if (specialSortOrder === "asc") {
-            setSpecialSortOrder("desc");
-        } else {
-            setSpecialSortOrder(null);
-        }
-        setLocalSpecialPage(1);
-    };
-
-    useEffect(() => {
-        if (inputRef.current) {
-            inputRef.current.addEventListener('focus', () => {
-                navigator.keyboard?.lock(['ru']);
-            });
-        }
-    }, []);
 
     const displayMainProducts = localMainProducts;
     const displaySpecialProducts = localSpecialProducts;
@@ -321,12 +297,7 @@ export default function Index({ auth, mainProducts, specialProducts, search, all
                                                 <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Название</th>
                                                 <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Год</th>
                                                 <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Кол-во</th>
-                                                <th
-                                                    className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                                                    onClick={handleSpecialSortChange}
-                                                >
-                                                    Цена <SortIndicator sortOrder={specialSortOrder} />
-                                                </th>
+                                                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Цена</th>
                                                 <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Поставщик</th>
                                                 <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Описание</th>
                                             </tr>
@@ -376,7 +347,7 @@ export default function Index({ auth, mainProducts, specialProducts, search, all
                                                     Год
                                                 </th>
                                                 <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                                    Количество
+                                                    Кол-во
                                                 </th>
                                                 <th
                                                     className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer"
@@ -386,9 +357,6 @@ export default function Index({ auth, mainProducts, specialProducts, search, all
                                                 </th>
                                                 <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                                                     Поставщик
-                                                </th>
-                                                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                                    Описание
                                                 </th>
                                             </tr>
                                             </thead>
@@ -412,9 +380,6 @@ export default function Index({ auth, mainProducts, specialProducts, search, all
                                                     </td>
                                                     <td className="px-3 py-3 whitespace-nowrap text-xs text-gray-500">
                                                         {product.sheet_name}
-                                                    </td>
-                                                    <td className="px-3 py-3 whitespace-nowrap text-xs text-gray-500">
-                                                        {product.description}
                                                     </td>
                                                 </tr>
                                             ))}

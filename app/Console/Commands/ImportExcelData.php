@@ -52,7 +52,6 @@ class ImportExcelData extends Command
 
             $this->info("Временный файл успешно скачан: {$tempFile}");
             $path = $tempFile;
-
         } catch (\Exception $e) {
             $this->error("Ошибка при скачивании файла: " . $e->getMessage());
             return 1;
@@ -89,9 +88,13 @@ class ImportExcelData extends Command
                 $sheet = $spreadsheet->getSheetByName($sheetName);
                 $rows = $sheet->toArray();
 
-                if (count($rows) > 0) {
-                    array_splice($rows, 0, 2);
+                if (count($rows) < 2) {
+                    $bar->advance();
+                    continue;
                 }
+
+                $sheetTitle = trim($rows[0][0] ?? 'Неизвестный лист');
+                array_splice($rows, 0, 2);
 
                 $isSpecial = str_starts_with($sheetName, '>');
                 $targetSheet = $isSpecial ? substr($sheetName, 1) : $sheetName;
@@ -100,16 +103,16 @@ class ImportExcelData extends Command
                     if (empty($row[0])) continue;
 
                     $originalName = mb_convert_encoding(substr($row[0] ?? '', 0, 255), 'UTF-8', 'auto');
-                    $normalizedName = preg_replace('/[\s\-\.,]+/', '', strtolower($originalName));
+                    $normalizedName = preg_replace('/[\s\-]+/', '', strtolower($originalName));
 
                     $product = [
                         'name' => $originalName,
                         'normalized_name' => $normalizedName,
                         'code' => $row[1] ?? null,
-                        'quantity' => is_numeric($row[2] ?? '') ? (float)$row[2] : null,
-                        'price' => is_numeric($row[3] ?? '') ? (float)$row[3] : null,
+                        'quantity' => is_numeric($row[2] ?? '') ? (int)$row[2] : null,
+                        'price' => $isSpecial ? ($row[3] ?? null) : (is_numeric($row[3] ?? '') ? (float)$row[3] : null),
                         'description' => $row[4] ?? null,
-                        'sheet_name' => $targetSheet,
+                        'sheet_name' => $isSpecial ? ($targetSheet) : ($sheetTitle),
                         'created_at' => now(),
                         'updated_at' => now(),
                     ];

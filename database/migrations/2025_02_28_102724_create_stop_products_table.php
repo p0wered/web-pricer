@@ -13,8 +13,8 @@ return new class extends Migration
             $table->string('name');
             $table->string('normalized_name');
             $table->string('code')->nullable();
-            $table->decimal('quantity', 15, 2)->nullable();
-            $table->decimal('price', 15, 2)->nullable();
+            $table->integer('quantity')->nullable();
+            $table->string('price')->nullable();
             $table->text('description')->nullable();
             $table->string('sheet_name');
             $table->timestamps();
