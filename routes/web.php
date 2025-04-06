@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\PasswordController;
+use App\Http\Controllers\ImportController;
 use App\Http\Controllers\ImportSettingsController;
 use App\Http\Controllers\SearchController;
 use Illuminate\Support\Facades\Route;
@@ -31,6 +32,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/settings/password', [PasswordController::class, 'update'])
         ->name('settings.password');
     Route::put('/settings', [ImportSettingsController::class, 'update'])->name('settings.update');
+
+    Route::post('/import-data', [ImportController::class, 'import'])->name('import.data');
 });
 
 require __DIR__.'/auth.php';

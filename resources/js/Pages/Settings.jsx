@@ -33,6 +33,19 @@ export default function Settings({ auth, settings }) {
 
     const [passwordMessage, setPasswordMessage] = useState(null);
     const [importMessage, setImportMessage] = useState(null);
+    const { post, processing: processingImportAction } = useForm();
+
+    const handleImport = (e) => {
+        e.preventDefault();
+        post(route('import.data'), {
+            onSuccess: (res) => {
+                console.log(res.props);
+            },
+            onError: (errors) => {
+                console.error(errors);
+            }
+        });
+    };
 
     const submitPassword = (e) => {
         e.preventDefault();
@@ -61,7 +74,7 @@ export default function Settings({ auth, settings }) {
             <div>
                 <div className="mx-auto">
                     <div className="overflow-hidden sm:rounded-lg p-4 mb-4">
-                        <div className="flex justify-between items-center bg-white rounded-lg py-4 px-6 mb-4">
+                        <div className="flex justify-between items-center bg-white rounded-lg p-4 mb-4">
                             <h1 className="text-2xl font-bold">Настройки</h1>
                             <Link
                                 href={route('search.index')}
@@ -74,59 +87,71 @@ export default function Settings({ auth, settings }) {
                             </Link>
                         </div>
                         <div className='grid grid-cols-1 lg:grid-cols-2 gap-4'>
-                            <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                                <h2 className="text-xl font-semibold mb-4">Сменить пароль</h2>
-                                {passwordMessage && <p className="text-green-500 mb-2">{passwordMessage}</p>}
-                                <form onSubmit={submitPassword} className="space-y-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Текущий пароль
-                                        </label>
-                                        <input
-                                            type="password"
-                                            value={passwordData.current_password}
-                                            onChange={(e) => setPasswordData('current_password', e.target.value)}
-                                            className="form-input rounded-md shadow-sm block w-full border border-gray-300 p-2"
-                                        />
-                                        {passwordErrors.current_password && (
-                                            <p className="text-red-500 text-sm mt-2">{passwordErrors.current_password}</p>
-                                        )}
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Новый пароль
-                                        </label>
-                                        <input
-                                            type="password"
-                                            value={passwordData.password}
-                                            onChange={(e) => setPasswordData('password', e.target.value)}
-                                            className="form-input rounded-md shadow-sm block w-full border border-gray-300 p-2"
-                                        />
-                                        {passwordErrors.password && (
-                                            <p className="text-red-500 text-sm mt-2">{passwordErrors.password}</p>
-                                        )}
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Подтвердите пароль
-                                        </label>
-                                        <input
-                                            type="password"
-                                            value={passwordData.password_confirmation}
-                                            onChange={(e) => setPasswordData('password_confirmation', e.target.value)}
-                                            className="form-input rounded-md shadow-sm block w-full border border-gray-300 p-2"
-                                        />
-                                    </div>
+                            <div className='flex flex-col gap-4'>
+                                <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-4">
+                                    <h2 className="text-xl font-semibold mb-4">Сменить пароль</h2>
+                                    {passwordMessage && <p className="text-green-500 mb-2">{passwordMessage}</p>}
+                                    <form onSubmit={submitPassword} className="space-y-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                Текущий пароль
+                                            </label>
+                                            <input
+                                                type="password"
+                                                value={passwordData.current_password}
+                                                onChange={(e) => setPasswordData('current_password', e.target.value)}
+                                                className="form-input rounded-md shadow-sm block w-full border border-gray-300 p-2"
+                                            />
+                                            {passwordErrors.current_password && (
+                                                <p className="text-red-500 text-sm mt-2">{passwordErrors.current_password}</p>
+                                            )}
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                Новый пароль
+                                            </label>
+                                            <input
+                                                type="password"
+                                                value={passwordData.password}
+                                                onChange={(e) => setPasswordData('password', e.target.value)}
+                                                className="form-input rounded-md shadow-sm block w-full border border-gray-300 p-2"
+                                            />
+                                            {passwordErrors.password && (
+                                                <p className="text-red-500 text-sm mt-2">{passwordErrors.password}</p>
+                                            )}
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                Подтвердите пароль
+                                            </label>
+                                            <input
+                                                type="password"
+                                                value={passwordData.password_confirmation}
+                                                onChange={(e) => setPasswordData('password_confirmation', e.target.value)}
+                                                className="form-input rounded-md shadow-sm block w-full border border-gray-300 p-2"
+                                            />
+                                        </div>
+                                        <button
+                                            type="submit"
+                                            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                                            disabled={processingPassword}
+                                        >
+                                            {processingPassword ? 'Сохранение...' : 'Сменить пароль'}
+                                        </button>
+                                    </form>
+                                </div>
+                                <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-4">
+                                    <h2 className="text-xl font-semibold mb-4">Импорт данных</h2>
                                     <button
-                                        type="submit"
-                                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                                        disabled={processingPassword}
+                                        onClick={handleImport}
+                                        className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+                                        disabled={processingImportAction}
                                     >
-                                        {processingPassword ? 'Сохранение...' : 'Сменить пароль'}
+                                        {processingImportAction ? 'Импорт...' : 'Импортировать данные'}
                                     </button>
-                                </form>
+                                </div>
                             </div>
-                            <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
+                            <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-4">
                                 <h2 className="text-xl font-semibold mb-4">Настройки импорта</h2>
                                 {importMessage && <p className="text-green-500 mb-2">{importMessage}</p>}
                                 <form onSubmit={submitImport} className="space-y-4">

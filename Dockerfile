@@ -49,4 +49,8 @@ RUN composer dump-autoload --optimize \
     && php artisan view:cache \
     && php artisan optimize
 
+COPY docker/php/entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+ENTRYPOINT ["entrypoint.sh"]
+
 CMD ["php-fpm"]
