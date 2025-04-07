@@ -33,15 +33,22 @@ export default function Settings({ auth, settings }) {
 
     const [passwordMessage, setPasswordMessage] = useState(null);
     const [importMessage, setImportMessage] = useState(null);
+    const [manualImportMessage, setManualImportMessage] = useState(null);
     const { post, processing: processingImportAction } = useForm();
 
     const handleImport = (e) => {
         e.preventDefault();
+        setManualImportMessage(null);
         post(route('import.data'), {
-            onSuccess: (res) => {
-                console.log(res.props);
+            onSuccess: (page) => {
+                if (page.props.flash && page.props.flash.message) {
+                    setManualImportMessage(page.props.flash.message);
+                } else {
+                    setManualImportMessage('Импорт завершен успешно');
+                }
             },
             onError: (errors) => {
+                setManualImportMessage('Ошибка при импорте: ' + (errors.error || 'Неизвестная ошибка'));
                 console.error(errors);
             }
         });
@@ -68,19 +75,38 @@ export default function Settings({ auth, settings }) {
         });
     };
 
+    const handleTimeInput = (e) => {
+        let value = e.target.value.replace(/[^\d]/g, '');
+
+        if (value.length >= 3) {
+            value = value.slice(0, 2) + ':' + value.slice(2, 4);
+        }
+
+        setImportData('excel_import_time', value.slice(0, 5));
+    };
+
+    const validateTimeFormat = () => {
+        const timeValue = importData.excel_import_time;
+        const timePattern = /^([01]\d|2[0-3]):([0-5]\d)$/;
+
+        if (timeValue && !timePattern.test(timeValue)) {
+            setImportData('excel_import_time', '');
+        }
+    };
+
     return (
         <Layout auth={auth}>
             <Head title="Настройки" />
             <div>
                 <div className="mx-auto">
                     <div className="overflow-hidden sm:rounded-lg p-4 mb-4">
-                        <div className="flex justify-between items-center bg-white rounded-lg p-4 mb-4">
+                        <div className="flex justify-between items-center bg-white rounded-lg px-6 py-4 mb-4">
                             <h1 className="text-2xl font-bold">Настройки</h1>
                             <Link
                                 href={route('search.index')}
                                 method="get"
                                 as="button"
-                                className="text-gray-700 underline"
+                                className="text-gray-700 underline hover:text-gray-500"
                                 style={{fontSize: 16}}
                             >
                                 Вернуться к поиску
@@ -133,7 +159,7 @@ export default function Settings({ auth, settings }) {
                                         </div>
                                         <button
                                             type="submit"
-                                            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                                            className="px-4 py-2 bg-gray-800 text-white rounded-md hover:bg-gray-500 transition-colors"
                                             disabled={processingPassword}
                                         >
                                             {processingPassword ? 'Сохранение...' : 'Сменить пароль'}
@@ -144,11 +170,14 @@ export default function Settings({ auth, settings }) {
                                     <h2 className="text-xl font-semibold mb-4">Импорт данных</h2>
                                     <button
                                         onClick={handleImport}
-                                        className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+                                        className="px-4 py-2 bg-gray-800 text-white rounded-md hover:bg-gray-500 transition-colors"
                                         disabled={processingImportAction}
                                     >
                                         {processingImportAction ? 'Импорт...' : 'Импортировать данные'}
                                     </button>
+                                    {manualImportMessage && (
+                                        <p className="text-green-500 mt-2">{manualImportMessage}</p>
+                                    )}
                                 </div>
                             </div>
                             <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-4">
@@ -227,7 +256,7 @@ export default function Settings({ auth, settings }) {
                                                     </label>
                                                 ) : (
                                                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                        Число месяца
+                                                        Число
                                                     </label>
                                                 )
                                             }
@@ -253,9 +282,11 @@ export default function Settings({ auth, settings }) {
                                         <input
                                             type="text"
                                             value={importData.excel_import_time}
-                                            onChange={(e) => setImportData('excel_import_time', e.target.value)}
+                                            onChange={handleTimeInput}
+                                            onBlur={validateTimeFormat}
                                             className="form-input rounded-md shadow-sm block w-full border border-gray-300 p-2"
                                             placeholder="HH:MM"
+                                            maxLength={5}
                                         />
                                         {importErrors.excel_import_time && (
                                             <p className="text-red-500 text-sm mt-2">{importErrors.excel_import_time}</p>
@@ -264,7 +295,7 @@ export default function Settings({ auth, settings }) {
 
                                     <button
                                         type="submit"
-                                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                                        className="px-4 py-2 bg-gray-800 text-white rounded-md hover:bg-gray-500 transition-colors"
                                         disabled={processingImport}
                                     >
                                         {processingImport ? 'Сохранение...' : 'Сохранить настройки импорта'}

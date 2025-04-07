@@ -273,7 +273,7 @@ export default function Index({ auth, mainProducts, specialProducts, search, all
                                     href={route('settings')}
                                     method="get"
                                     as="button"
-                                    className="text-gray-700 underline"
+                                    className="text-gray-700 hover:text-gray-500 underline"
                                     style={{fontSize: 16}}
                                 >
                                     Настройки
@@ -282,7 +282,7 @@ export default function Index({ auth, mainProducts, specialProducts, search, all
                                     href={route('logout')}
                                     method="post"
                                     as="button"
-                                    className="text-gray-700 underline"
+                                    className="text-gray-700 hover:text-gray-500 underline"
                                     style={{fontSize: 16}}
                                 >
                                     Выйти
@@ -303,9 +303,9 @@ export default function Index({ auth, mainProducts, specialProducts, search, all
                                 <button
                                     type="button"
                                     onClick={toggleConvertLayout}
-                                    className={`px-4 py-2 rounded-md transition-colors ${convertLayout ? 'bg-blue-600 text-white' : 'bg-gray-200 text-black'}`}
+                                    className={`px-4 py-2 rounded-md  transition-colors ${convertLayout ? 'bg-gray-800 text-white hover:bg-gray-500' : 'bg-gray-200 text-black hover:bg-gray-300'}`}
                                 >
-                                    EN→РУ
+                                    EN→RU
                                 </button>
                                 <button
                                     type="button"
@@ -327,7 +327,7 @@ export default function Index({ auth, mainProducts, specialProducts, search, all
                                 </button>
                                 <button
                                     type="submit"
-                                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                                    className="px-4 py-2 bg-gray-800 text-white rounded-md hover:bg-gray-500 transition-colors"
                                     disabled={isLoading}
                                 >
                                     Поиск

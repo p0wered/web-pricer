@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
+use Inertia\Inertia;
 
 class ImportController extends Controller
 {
@@ -11,9 +12,9 @@ class ImportController extends Controller
     {
         try {
             Artisan::call('import:excel');
-            return response()->json(['message' => 'Импорт завершен успешно']);
+            return back()->with('flash', ['message' => 'Импорт завершен успешно']);
         } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
+            return back()->with('flash', ['error' => $e->getMessage()]);
         }
     }
 }
