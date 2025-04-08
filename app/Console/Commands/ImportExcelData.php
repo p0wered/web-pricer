@@ -103,17 +103,14 @@ class ImportExcelData extends Command
                     if (empty($row[0])) continue;
 
                     $originalName = mb_convert_encoding(substr($row[0] ?? '', 0, 255), 'UTF-8', 'auto');
-                    $normalizedName = preg_replace('/[\s\-]+/', '', strtolower($originalName));
-                    $normalizedName = str_replace(',', '.', $normalizedName);
 
                     $product = [
                         'name' => $originalName,
-                        'normalized_name' => $normalizedName,
                         'code' => $row[1] ?? null,
                         'quantity' => is_numeric($row[2] ?? '') ? (int)$row[2] : null,
                         'price' => $isSpecial ? ($row[3] ?? null) : (is_numeric($row[3] ?? '') ? (float)$row[3] : null),
                         'description' => $row[4] ?? null,
-                        'sheet_name' => $isSpecial ? ($targetSheet) : ($sheetTitle),
+                        'sheet_name' => $isSpecial ? $targetSheet : $sheetTitle,
                         'created_at' => now(),
                         'updated_at' => now(),
                     ];

@@ -22,13 +22,11 @@ class SearchController extends Controller
         return Inertia::render('Search', [
             'mainProducts' => [
                 'data' => [],
-                'links' => [],
-                'total' => 0
+                'total' => 0,
             ],
             'specialProducts' => [
                 'data' => [],
-                'links' => [],
-                'total' => 0
+                'total' => 0,
             ],
             'search' => ''
         ]);
@@ -42,9 +40,6 @@ class SearchController extends Controller
     private function performSearch(Request $request)
     {
         $search = $request->input('search', '');
-        $perPage = 15;
-        $mainPage = $request->input('main_page', 1);
-        $specialPage = $request->input('special_page', 1);
 
         if (empty($search)) {
             return redirect()->route('search.index');
@@ -57,15 +52,17 @@ class SearchController extends Controller
             $normalizedSearch = preg_replace('/\s+/', ' ', trim($search));
             $tokens = explode(' ', $normalizedSearch);
             $baseToken = array_shift($tokens);
-            $baseTokenUnified = strtolower($this->unifyString($baseToken));
+            $baseTokenLower = strtolower($baseToken);
 
             $mainProducts = MainProduct::query();
             $specialProducts = SpecialProduct::query();
 
-            $applyBaseCondition = function ($query) use ($baseTokenUnified) {
-                $query->where(function ($q) use ($baseTokenUnified) {
-                    $q->where('normalized_name', '=', $baseTokenUnified)
-                        ->orWhere('normalized_name', 'LIKE', "{$baseTokenUnified}%");
+            $applyBaseCondition = function ($query) use ($baseTokenLower) {
+                $query->where(function ($q) use ($baseTokenLower) {
+                    $q->whereRaw("LOWER(name) = ?", [$baseTokenLower])
+                        ->orWhereRaw("LOWER(name) LIKE ?", [$baseTokenLower . '%'])
+                        ->orWhereRaw("LOWER(name) LIKE ?", ['%' . $baseTokenLower . '%'])
+                        ->orWhereRaw("LOWER(name) LIKE ?", ['%-' . $baseTokenLower . '%']);
                 });
                 return $query;
             };
@@ -76,8 +73,15 @@ class SearchController extends Controller
             if (!empty($tokens)) {
                 $applyAdditionalConditions = function ($query) use ($tokens) {
                     foreach ($tokens as $token) {
-                        $tokenUnified = strtolower($this->unifyString($token));
-                        $query->where('normalized_name', 'LIKE', "%{$tokenUnified}%");
+                        $tokenLower = strtolower($token);
+                        if (is_numeric($tokenLower)) {
+                            $query->where(function($q) use ($tokenLower) {
+                                $q->whereRaw("LOWER(name) LIKE ?", ["%{$tokenLower}%"])
+                                    ->whereRaw("LOWER(name) NOT REGEXP ?", ["{$tokenLower}[0-9]"]);
+                            });
+                        } else {
+                            $query->whereRaw("LOWER(name) LIKE ?", ["%{$tokenLower}%"]);
+                        }
                     }
                     return $query;
                 };
@@ -86,11 +90,10 @@ class SearchController extends Controller
                 $specialProducts = $applyAdditionalConditions($specialProducts);
             }
 
-            $orderByRelevance = function ($query) use ($baseTokenUnified, $tokens) {
+            $orderByRelevance = function ($query) use ($baseTokenLower, $tokens) {
                 $relevanceScore = '(';
                 $relevanceScore .= "CASE WHEN LOWER(name) LIKE ? THEN 1000 ELSE 0 END";
-
-                $params = [ $baseTokenUnified . '%' ];
+                $params = [$baseTokenLower . '%'];
 
                 foreach ($tokens as $index => $token) {
                     $score = 500 - ($index * 50);
@@ -108,9 +111,8 @@ class SearchController extends Controller
             $mainProducts = $orderByRelevance($mainProducts);
             $specialProducts = $orderByRelevance($specialProducts);
 
-            $mainProductsAll = $mainProducts->get(['id', 'name', 'code', 'quantity', 'price', 'sheet_name', 'description']);
+            $mainProductsAll = $mainProducts->get(['id', 'name', 'code', 'quantity', 'price', 'sheet_name']);
             $specialProductsAll = $specialProducts->get(['id', 'name', 'code', 'quantity', 'price', 'sheet_name', 'description']);
-
 
             $cachedResults = [
                 'mainProductsAll' => $mainProductsAll,
@@ -120,40 +122,20 @@ class SearchController extends Controller
             Cache::put($cacheKey, $cachedResults, now()->addMinutes(15));
         }
 
-        $mainProductsCollection = collect($cachedResults['mainProductsAll']);
-        $specialProductsCollection = collect($cachedResults['specialProductsAll']);
-
-        $mainProductsPaginator = new \Illuminate\Pagination\LengthAwarePaginator(
-            $mainProductsCollection->forPage($mainPage, $perPage),
-            $mainProductsCollection->count(),
-            $perPage,
-            $mainPage,
-            ['path' => \Illuminate\Support\Facades\Request::url(), 'query' => ['main_page' => $mainPage, 'special_page' => $specialPage, 'search' => $search]]
-        );
-
-        $specialProductsPaginator = new \Illuminate\Pagination\LengthAwarePaginator(
-            $specialProductsCollection->forPage($specialPage, $perPage),
-            $specialProductsCollection->count(),
-            $perPage,
-            $specialPage,
-            ['path' => \Illuminate\Support\Facades\Request::url(), 'query' => ['main_page' => $mainPage, 'special_page' => $specialPage, 'search' => $search]]
-        );
-
         return Inertia::render('Search', [
-            'mainProducts' => $mainProductsPaginator,
-            'specialProducts' => $specialProductsPaginator,
+            'mainProducts' => [
+                'data' => $cachedResults['mainProductsAll'],
+                'total' => count($cachedResults['mainProductsAll']),
+            ],
+            'specialProducts' => [
+                'data' => $cachedResults['specialProductsAll'],
+                'total' => count($cachedResults['specialProductsAll']),
+            ],
             'search' => $search,
             'allData' => [
                 'mainProductsAll' => $cachedResults['mainProductsAll'],
                 'specialProductsAll' => $cachedResults['specialProductsAll']
             ]
         ]);
-    }
-
-    private function unifyString($string)
-    {
-        $string = strtolower($string);
-        $string = str_replace(',', '.', $string);
-        return preg_replace('/[\s\-]+/', '', $string);
     }
 }

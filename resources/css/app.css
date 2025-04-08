@@ -11,3 +11,22 @@ input::-webkit-inner-spin-button {
 input[type=number] {
     -moz-appearance: textfield;
 }
+
+.row-padding{
+    padding: 5px 8px;
+}
+
+.h-screen-padding{
+    height: calc(100vh - 115px);
+}
+
+.h-full-padding{
+    height: calc(100% - 34px);
+    border-radius: 3px;
+}
+
+.separator{
+    border-radius: 999px;
+    min-width: 2px;
+    height: 16px;
+}

@@ -100,14 +100,13 @@ export default function Settings({ auth, settings }) {
             <div>
                 <div className="mx-auto">
                     <div className="overflow-hidden sm:rounded-lg p-4 mb-4">
-                        <div className="flex justify-between items-center bg-white rounded-lg px-6 py-4 mb-4">
+                        <div className="flex justify-between items-center bg-white rounded-lg p-3 mb-4">
                             <h1 className="text-2xl font-bold">Настройки</h1>
                             <Link
                                 href={route('search.index')}
                                 method="get"
                                 as="button"
-                                className="text-gray-700 underline hover:text-gray-500"
-                                style={{fontSize: 16}}
+                                className="px-4 py-2 bg-gray-200 text-black rounded-md hover:bg-gray-300 transition-colors"
                             >
                                 Вернуться к поиску
                             </Link>
@@ -115,7 +114,7 @@ export default function Settings({ auth, settings }) {
                         <div className='grid grid-cols-1 lg:grid-cols-2 gap-4'>
                             <div className='flex flex-col gap-4'>
                                 <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-4">
-                                    <h2 className="text-xl font-semibold mb-4">Сменить пароль</h2>
+                                    <h2 className="text-xl font-semibold mb-4">Смена пароля</h2>
                                     {passwordMessage && <p className="text-green-500 mb-2">{passwordMessage}</p>}
                                     <form onSubmit={submitPassword} className="space-y-4">
                                         <div>
@@ -173,7 +172,7 @@ export default function Settings({ auth, settings }) {
                                         className="px-4 py-2 bg-gray-800 text-white rounded-md hover:bg-gray-500 transition-colors"
                                         disabled={processingImportAction}
                                     >
-                                        {processingImportAction ? 'Импорт...' : 'Импортировать данные'}
+                                        {processingImportAction ? 'Импорт...' : 'Начать импорт'}
                                     </button>
                                     {manualImportMessage && (
                                         <p className="text-green-500 mt-2">{manualImportMessage}</p>
@@ -298,7 +297,7 @@ export default function Settings({ auth, settings }) {
                                         className="px-4 py-2 bg-gray-800 text-white rounded-md hover:bg-gray-500 transition-colors"
                                         disabled={processingImport}
                                     >
-                                        {processingImport ? 'Сохранение...' : 'Сохранить настройки импорта'}
+                                        {processingImport ? 'Сохранение...' : 'Сохранить'}
                                     </button>
                                 </form>
                             </div>
