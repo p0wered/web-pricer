@@ -226,8 +226,11 @@ export default function Index({ auth, mainProducts, specialProducts, search, all
                             </div>
                         </form>
                     </div>
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                        <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-4 h-screen-padding">
+                    <div className="flex flex-row gap-4">
+                        <div
+                            className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-4 h-screen-padding"
+                            style={sortedSpecialProducts && sortedSpecialProducts.length > 0 ? {width: '80%'} : {width: '30%'}}
+                        >
                             <h2 className="text-lg font-semibold mb-2">
                                 Стоп-лист ({sortedSpecialProducts.length})
                             </h2>
@@ -236,7 +239,7 @@ export default function Index({ auth, mainProducts, specialProducts, search, all
                                     <table className="min-w-full divide-y divide-gray-200">
                                         <thead className="bg-gray-50">
                                         <tr>
-                                            <th className="p-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            <th className="p-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider max-w-[220px] truncate">
                                                 Название
                                             </th>
                                             <th className="p-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider max-w-[75px] truncate">
@@ -262,7 +265,7 @@ export default function Index({ auth, mainProducts, specialProducts, search, all
                                                 key={product.id}
                                                 className={`${product.sheet_name === "STOP" ? "text-red-600 bg-red-50" : getSupplierColor(product.sheet_name)} hover:bg-opacity-50`}
                                             >
-                                                <td className="whitespace-nowrap text-sm row-padding">{product.name}</td>
+                                                <td className="whitespace-nowrap text-sm row-padding max-w-[220px] truncate">{product.name}</td>
                                                 <td className="whitespace-nowrap text-sm row-padding max-w-[75px] truncate">{product.code}</td>
                                                 <td className="whitespace-nowrap text-sm row-padding">{product.quantity}</td>
                                                 <td className="whitespace-nowrap text-sm row-padding">{product.price}</td>
@@ -277,7 +280,7 @@ export default function Index({ auth, mainProducts, specialProducts, search, all
                                 <p className="text-gray-500">Нет данных для отображения</p>
                             )}
                         </div>
-                        <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-4 h-screen-padding">
+                        <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-4 h-screen-padding" style={{width: '100%'}}>
                             <h2 className="text-lg font-semibold mb-2">
                                 Детали ({sortedMainProducts.length})
                             </h2>
@@ -286,7 +289,7 @@ export default function Index({ auth, mainProducts, specialProducts, search, all
                                     <table className="min-w-full divide-y divide-gray-200">
                                         <thead className="bg-gray-50">
                                         <tr>
-                                            <th className="p-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                            <th className="p-2 text-left text-xs font-medium text-gray-500 uppercase max-w-[220px] truncate">
                                                 Название
                                             </th>
                                             <th className="p-2 text-left text-xs font-medium text-gray-500 uppercase max-w-[75px] truncate">
@@ -312,7 +315,7 @@ export default function Index({ auth, mainProducts, specialProducts, search, all
                                                 key={product.id}
                                                 className={`${getSupplierColor(product.sheet_name)} hover:bg-opacity-50`}
                                             >
-                                                <td className="whitespace-nowrap text-sm text-gray-900 row-padding">
+                                                <td className="whitespace-nowrap text-sm text-gray-900 row-padding max-w-[220px] truncate">
                                                     {product.name}
                                                 </td>
                                                 <td className="whitespace-nowrap text-sm text-gray-500 row-padding max-w-[75px] truncate">

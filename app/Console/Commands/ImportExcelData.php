@@ -36,6 +36,13 @@ class ImportExcelData extends Command
             $tempDir = storage_path('app/temp');
             if (!file_exists($tempDir)) {
                 mkdir($tempDir, 0755, true);
+            } else {
+                $files = glob($tempDir . '/*');
+                foreach ($files as $file) {
+                    if (is_file($file)) {
+                        unlink($file);
+                    }
+                }
             }
 
             $tempFile = $tempDir . '/imported_excel_' . time() . '.xlsm';

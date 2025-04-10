@@ -1,6 +1,8 @@
 import {useForm, Head, Link} from '@inertiajs/react';
 import React, { useState } from 'react';
 import Layout from '@/Layouts/AuthenticatedLayout';
+import axios from 'axios';
+import {Oval} from "react-loader-spinner";
 
 export default function Settings({ auth, settings }) {
     const {
@@ -34,24 +36,33 @@ export default function Settings({ auth, settings }) {
     const [passwordMessage, setPasswordMessage] = useState(null);
     const [importMessage, setImportMessage] = useState(null);
     const [manualImportMessage, setManualImportMessage] = useState(null);
+    const [isLoading, setIsLoading] = useState(false);
     const { post, processing: processingImportAction } = useForm();
 
-    const handleImport = (e) => {
+    const handleImport = async (e) => {
         e.preventDefault();
         setManualImportMessage(null);
-        post(route('import.data'), {
-            onSuccess: (page) => {
-                if (page.props.flash && page.props.flash.message) {
-                    setManualImportMessage(page.props.flash.message);
+        setIsLoading(true);
+
+        try {
+            const response = await axios.post(route('import.data'));
+            const data = response.data;
+            if (data.success) {
+                setManualImportMessage('Импорт завершен успешно.');
+            } else {
+                if (data.message.includes('401')){
+                    setManualImportMessage('Ошибка авторизации. Проверьте логин и пароль.');
+                } else if (data.message.includes('Could not resolve host')) {
+                    setManualImportMessage('Ошибка импорта. Не удалось подключиться по указанному URL.')
                 } else {
-                    setManualImportMessage('Импорт завершен успешно');
+                    setManualImportMessage('Ошибка при импорте.')
                 }
-            },
-            onError: (errors) => {
-                setManualImportMessage('Ошибка при импорте: ' + (errors.error || 'Неизвестная ошибка'));
-                console.error(errors);
             }
-        });
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const submitPassword = (e) => {
@@ -167,15 +178,30 @@ export default function Settings({ auth, settings }) {
                                 </div>
                                 <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-4">
                                     <h2 className="text-xl font-semibold mb-4">Импорт данных</h2>
-                                    <button
-                                        onClick={handleImport}
-                                        className="px-4 py-2 bg-gray-800 text-white rounded-md hover:bg-gray-500 transition-colors"
-                                        disabled={processingImportAction}
-                                    >
-                                        {processingImportAction ? 'Импорт...' : 'Начать импорт'}
-                                    </button>
+                                    <div className='flex items-center gap-3'>
+                                        <button
+                                            onClick={handleImport}
+                                            disabled={isLoading}
+                                            className="px-4 py-2 bg-gray-800 text-white rounded-md hover:bg-gray-500 transition-colors"
+                                        >
+                                            {isLoading ? 'Импорт выполняется...' : 'Начать импорт'}
+                                        </button>
+                                        <Oval
+                                            visible={isLoading}
+                                            height="26"
+                                            width="26"
+                                            strokeWidth="5"
+                                            color="#1f2937"
+                                            secondaryColor="gray"
+                                            ariaLabel="oval-loading"
+                                            wrapperStyle={{}}
+                                            wrapperClass=""
+                                        />
+                                    </div>
                                     {manualImportMessage && (
-                                        <p className="text-green-500 mt-2">{manualImportMessage}</p>
+                                        <p className={manualImportMessage.includes('Ошибка') ? 'text-red-500 mt-2' : 'text-green-500 mt-2'}>
+                                            {manualImportMessage}
+                                        </p>
                                     )}
                                 </div>
                             </div>
