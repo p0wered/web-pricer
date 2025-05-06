@@ -117,7 +117,7 @@ export default function Settings({ auth, settings }) {
                                 href={route('search.index')}
                                 method="get"
                                 as="button"
-                                className="px-4 py-2 bg-gray-200 text-black rounded-md hover:bg-gray-300 transition-colors"
+                                className="px-4 py-2 bg-gray-800 text-white rounded-md hover:bg-gray-500 transition-colors"
                             >
                                 Вернуться к поиску
                             </Link>

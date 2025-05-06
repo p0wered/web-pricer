@@ -45,11 +45,13 @@ class SearchController extends Controller
             return redirect()->route('search.index');
         }
 
-        $cacheKey = "search_results_" . md5($search);
+        $normalizedSearch = $this->normalizeSearchQuery($search);
+
+        $cacheKey = "search_results_" . md5($normalizedSearch);
         $cachedResults = Cache::get($cacheKey);
 
         if (!$cachedResults) {
-            $normalizedSearch = preg_replace('/\s+/', ' ', trim($search));
+            $normalizedSearch = preg_replace('/\s+/', ' ', trim($normalizedSearch));
             $tokens = explode(' ', $normalizedSearch);
             $baseToken = array_shift($tokens);
             $baseTokenLower = strtolower($baseToken);
@@ -74,10 +76,14 @@ class SearchController extends Controller
                 $applyAdditionalConditions = function ($query) use ($tokens) {
                     foreach ($tokens as $token) {
                         $tokenLower = strtolower($token);
-                        if (is_numeric($tokenLower)) {
-                            $query->where(function($q) use ($tokenLower) {
-                                $q->whereRaw("LOWER(name) LIKE ?", ["%{$tokenLower}%"])
-                                    ->whereRaw("LOWER(name) NOT REGEXP ?", ["{$tokenLower}[0-9]"]);
+
+                        if (is_numeric(str_replace(',', '.', $tokenLower))) {
+                            $tokenWithDot = str_replace(',', '.', $tokenLower);
+                            $tokenWithComma = str_replace('.', ',', $tokenLower);
+
+                            $query->where(function($q) use ($tokenWithDot, $tokenWithComma) {
+                                $q->whereRaw("LOWER(name) LIKE ?", ["%{$tokenWithDot}%"])
+                                    ->orWhereRaw("LOWER(name) LIKE ?", ["%{$tokenWithComma}%"]);
                             });
                         } else {
                             $query->whereRaw("LOWER(name) LIKE ?", ["%{$tokenLower}%"]);
@@ -137,5 +143,10 @@ class SearchController extends Controller
                 'specialProductsAll' => $cachedResults['specialProductsAll']
             ]
         ]);
+    }
+
+    private function normalizeSearchQuery($search)
+    {
+        return $search;
     }
 }
